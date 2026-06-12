@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>实习能量站 · 成长导航智能看板 - Demo</title>
+<!-- Vue 3 -->
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<!-- TDesign Vue Next -->
+<link rel="stylesheet" href="https://unpkg.com/tdesign-vue-next/esm/style/index.css" />
+<script src="https://unpkg.com/tdesign-vue-next/dist/tdesign-vue-next.umd.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: #f0f2f5;
+  color: #333;
+  min-height: 100vh;
+}
+
+/* ========== 布局容器 ========== */
+.app-container { max-width: 1440px; margin: 0 auto; padding: 16px 24px; }
+
+/* ========== 顶部导航栏 ========== */
+.top-nav {
+  background: linear-gradient(135deg, #0052d9 0%, #36a3ff 50%, #7b61ff 100%);
+  padding: 14px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 0 0 12px 12px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 16px rgba(0,82,217,0.25);
+}
+.nav-brand { display: flex; align-items: center; gap: 10px; }
+.nav-logo {
+  width: 38px; height: 38px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+}
+.nav-title { color: #fff; }
+.nav-title h1 { font-size: 20px; font-weight: 700; }
+.nav-title small { font-size: 12px; opacity: 0.8; }
+.nav-user {
+  display: flex; align-items: center; gap: 12px;
+  color: rgba(255,255,255,0.9); font-size: 13px;
+}
+.user-avatar {
+  width: 34px; height: 34px;
+  background: rgba(255,255,255,0.25);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 600; font-size: 13px;
+}
+
+/* ========== 标签页切换 ========== */
+.tab-bar {
+  display: flex; gap: 4px; background: #fff;
+  padding: 5px; border-radius: 12px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.tab-btn {
+  flex: 1; padding: 11px 18px; border: none;
+  border-radius: 9px; cursor: pointer;
+  font-size: 14px; font-weight: 500;
+  transition: all 0.25s ease;
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  color: #666; background: transparent;
+}
+.tab-btn:hover { background: #f5f6fa; }
+.tab-btn.active {
+  background: #0052d9; color: #fff;
+  box-shadow: 0 2px 8px rgba(0,82,217,0.3);
+}
+.tab-icon { font-size: 17px; }
+
+/* ========== KPI 卡片通用 ========== */
+.kpi-row {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px; margin-bottom: 18px;
+}
+.kpi-card {
+  background: #fff; border-radius: 12px; padding: 18px;
+  border: 1px solid #ebeef5; position: relative; overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.kpi-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.08); }
+.kpi-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+}
+.kp-blue::before { background: linear-gradient(90deg, #0052d9, #36a3ff); }
+.kp-green::before { background: linear-gradient(90deg, #00a870, #46d68a); }
+.kp-orange::before { background: linear-gradient(90deg, #ed7b2f, #ffa940); }
+.kp-red::before { background: linear-gradient(90deg, #e34d59, #ff7875); }
+.kp-purple::before { background: linear-gradient(90deg, #7b61ff, #b37feb); }
+.kpi-icon-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; color: #999; }
+.kpi-icon-row .ki { font-size: 24px; }
+.kpi-val { font-size: 30px; font-weight: 800; line-height: 1.1; }
+.kpi-val sub { font-size: 15px; opacity: 0.65; margin-left: 2px; vertical-align: baseline; }
+.kpi-lbl { font-size: 12px; color: #999; margin-top: 4px; }
+
+/* ========== 面板卡片 ========== */
+.panel {
+  background: #fff; border-radius: 12px; border: 1px solid #ebeef5;
+  padding: 18px; margin-bottom: 16px;
+}
+.panel-hd {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px; font-size: 15px; font-weight: 600;
+}
+.panel-hd span { display: flex; align-items: center; gap: 6px; }
+
+/* ========== 标签样式 ========== */
+.tag {
+  display: inline-block; padding: 2px 10px; border-radius: 10px;
+  font-size: 12px; font-weight: 500;
+}
+.tag-blue { background: #edf2ff; color: #0052d9; }
+.tag-green { background: #e8ffef; color: #00a870; }
+.tag-orange { background: #fff6ec; color: #ed7b2f; }
+.tag-red { background: #ffecec; color: #e34d59; }
+.tag-purple { background: #f4f0ff; color: #7b61ff; }
+.tag-gray { background: #f3f3f3; color: #888; }
+
+/* ========== 进度条 ========== */
+.progress-wrap { display: flex; align-items: center; gap: 8px; }
+.progress-track {
+  flex: 1; height: 8px; background: #f0f0f0;
+  border-radius: 4px; overflow: hidden;
+}
+.progress-fill { height: 100%; border-radius: 4px; transition: width 0.5s; }
+.progress-pct { font-size: 12px; font-weight: 600; min-width: 36px; text-align: right; }
+
+/* ========== 表格 ========== */
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table thead th {
+  background: #fafbfc; padding: 10px 12px; text-align: left;
+  font-size: 12px; font-weight: 600; color: #666;
+  border-bottom: 1px solid #ebeef5;
+}
+.data-table tbody td {
+  padding: 11px 12px; font-size: 13px; border-bottom: 1px solid #f5f5f5;
+  vertical-align: middle;
+}
+.data-table tbody tr:hover { background: #f8faff; }
+.cell-name { display: flex; align-items: center; gap: 8px; }
+.cell-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 12px; font-weight: 600; flex-shrink: 0;
+}
+.av-1 { background: #0052d9; } .av-2 { background: #00a870; }
+.av-3 { background: #ed7b2f; } .av-4 { background: #7b61ff; }
+.av-5 { background: #e34d59; } .av-6 { background: #44b700; }
+.score-num { font-weight: 700; font-size: 15px; }
+.sc-high { color: #00a870; } .sc-mid { color: #ed7b2f; } .sc-low { color: #e34d59; }
+
+/* ========== 筛选工具栏 ========== */
+.filter-bar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px; background: #fff;
+  border-radius: 10px; border: 1px solid #ebeef5;
+  margin-bottom: 14px; flex-wrap: wrap;
+}
+.f-input {
+  padding: 7px 12px; border: 1px solid #dcdfe6; border-radius: 6px;
+  font-size: 13px; outline: none; width: 190px; transition: border-color 0.2s;
+}
+.f-input:focus { border-color: #0052d9; }
+.f-select {
+  padding: 7px 30px 7px 12px; border: 1px solid #dcdfe6;
+  border-radius: 6px; font-size: 13px; appearance: none;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23999'%3E%3Cpath d='M6 8L1 3h10z'/%3E%3C/svg%3E") no-repeat right 10px center;
+  cursor: pointer; outline: none;
+}
+.f-select:focus { border-color: #0052d9; }
+.f-chk {
+  display: flex; align-items: center; gap: 5px; cursor: pointer;
+  font-size: 13px; color: #555;
+}
+.f-chk input[type="checkbox"] { accent-color: #0052d9; }
+
+/* ========== 风险面板 ========== */
+.alert-banner {
+  padding: 12px 16px; border-radius: 8px;
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; margin-bottom: 14px;
+}
+.alert-warn { background: #fff8e6; border: 1 solid #ffd666; color: #ad6800; }
+.alert-danger { background: #fff2f0; border: 1 solid #ffa39e; color: #cf1322; }
+.risk-card {
+  border-radius: 10px; padding: 14px; border: 1px solid #ebeef5;
+  margin-bottom: 10px; transition: box-shadow 0.2s;
+}
+.risk-card:hover { box-shadow: 0 3px 12px rgba(0,0,0,0.08); }
+.risk-card.rc-behind { border-left: 3px solid #e34d59; }
+.risk-card.rc-stagnant { border-left: 3px solid #ed7b2f; }
+.rc-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.rc-info { flex: 1; }
+.rc-info strong { font-size: 14px; }
+.rc-info small { font-size: 12px; color: #999; }
+.rc-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.btn-sm {
+  padding: 6px 12px; border: 1px solid #dcdfe6; border-radius: 6px;
+  font-size: 12px; cursor: pointer; background: #fff; transition: all 0.2s;
+}
+.btn-sm:hover { border-color: #0052d9; color: #0052d9; }
+.btn-primary {
+  padding: 8px 20px; background: #0052d9; color: #fff; border: none;
+  border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: 500;
+}
+.btn-outline {
+  padding: 8px 20px; background: #fff; color: #0052d9;
+  border: 1px solid #0052d9; border-radius: 6px;
+  font-size: 13px; cursor: pointer; font-weight: 500;
+}
+
+/* ========== 弹窗遮罩 ========== */
+.modal-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.45); z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+}
+.modal-box {
+  background: #fff; border-radius: 14px; width: 520px; max-height: 80vh;
+  overflow-y: auto; box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+}
+.modal-hd {
+  padding: 18px 22px; border-bottom: 1px solid #ebeef5;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.modal-hd h3 { font-size: 16px; margin: 0; }
+.modal-close {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: none; background: #f3f3f3; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; font-size: 16px;
+}
+.modal-body { padding: 20px 22px; }
+.ai-bubble {
+  background: linear-gradient(135deg, #f0f5ff, #e8f3ff);
+  border-left: 3px solid #0052d9;
+  padding: 14px 16px; border-radius: 0 10px 10px 0;
+  font-size: 14px; line-height: 1.7; margin-bottom: 16px;
+}
+.ai-section-title {
+  font-size: 13px; font-weight: 600; color: #0052d9;
+  margin: 14px 0 8px 0; display: flex; align-items: center; gap: 6px;
+}
+.ai-action-item {
+  display: flex; gap: 8px; padding: 8px 0; font-size: 13px;
+}
+.ai-action-badge {
+  background: #0052d9; color: #fff; padding: 1px 8px;
+  border-radius: 4px; font-size: 11px; white-space: nowrap; height: fit-content;
+}
+.ai-radar {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 8px; margin-top: 12px;
+}
+.radar-item {
+  text-align: center; padding: 10px; background: #fafbfc;
+  border-radius: 8px;
+}
+.radar-label { font-size: 11px; color: #999; margin-top: 4px; }
+.radar-val { font-size: 20px; font-weight: 700; }
+.radar-val.rv-good { color: #00a870; }
+.radar-val.rv-mid { color: #ed7b2f; }
+.radar-val.rv-low { color: #e34d59; }
+
+/* ========== 进度分布柱状图 (纯CSS) ========== */
+.chart-bars { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
+.bar-row { display: flex; align-items: center; gap: 10px; }
+.bar-label { width: 110px; font-size: 12px; color: #666; text-align: right; flex-shrink: 0; }
+.bar-track { flex: 1; height: 22px; background: #f0f0f0; border-radius: 4px; overflow: hidden; }
+.bar-fill {
+  height: 100%; display: flex; align-items: center; padding-right: 8px;
+  justify-content: flex-end; border-radius: 4px; transition: width 0.5s;
+  min-width: 0; font-size: 11px; color: #fff; font-weight: 600;
+}
+.bar-count { width: 32px; font-size: 13px; font-weight: 700; color: #333; text-align: right; }
+
+/* 饼图 */
+.pie-area { display: flex; align-items: center; gap: 24px; margin-top: 10px; }
+.pie-chart-css {
+  width: 120px; height: 120px; border-radius: 50%;
+  position: relative; flex-shrink: 0;
+}
+.pie-center {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  width: 64px; height: 64px; background: #fff; border-radius: 50%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.pie-center b { font-size: 20px; }
+.pie-center small { font-size: 10px; color: #999; }
+.pie-legend { display: flex; flex-direction: column; gap: 6px; }
+.legend-row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #666; }
+.ldot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+
+/* ========== 实习生仪表盘特有 ========== */
+.welcome-banner {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 14px; padding: 22px 26px;
+  color: #fff; display: flex; align-items: center; gap: 18px;
+  margin-bottom: 18px;
+}
+.wb-avatar {
+  width: 56px; height: 56px; background: rgba(255,255,255,0.25);
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 24px; font-weight: 700; flex-shrink: 0;
+}
+.wb-info h3 { font-size: 19px; margin: 0 0 4px 0; }
+.wb-info p { font-size: 13px; opacity: 0.85; margin: 0; }
+.wb-tags { display: flex; gap: 6px; margin-top: 8px; }
+.wt-tag { background: rgba(255,255,255,0.2); padding: 2px 10px; border-radius: 10px; font-size: 12px; }
+
+.stage-timeline { display: flex; flex-direction: column; gap: 14px; }
+.st-item { display: flex; gap: 12px; align-items: flex-start; }
+.st-dot {
+  width: 12px; height: 12px; border-radius: 50%; margin-top: 4px;
+  flex-shrink: 0; border: 2px solid;
+}
+.st-active .st-dot { background: currentColor; }
+.st-done .st-dot { background: currentColor; }
+.st-future .st-dot { background: #fff; }
+.st-body { flex: 1; }
+.st-body h4 { font-size: 14px; margin: 0 0 4px 0; }
+.st-body p { font-size: 12px; color: #999; margin: 0; }
+
+.task-list { display: flex; flex-direction: column; gap: 10px; }
+.task-card {
+  background: #fafbfc; border-radius: 10px; padding: 14px;
+  border: 1px solid #eee; transition: all 0.2s;
+}
+.task-card:hover { box-shadow: 0 3px 10px rgba(0,0,0,0.06); }
+.tc-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.tc-title { font-size: 14px; font-weight: 600; }
+.tc-meta { display: flex; gap: 6px; align-items: center; }
+.tc-desc { font-size: 12px; color: #777; line-height: 1.5; }
+.tc-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
+
+/* AI 卡片 */
+.ai-card {
+  background: linear-gradient(145deg, #fdfbff, #f5f0ff);
+  border: 1px solid #e8dff5; border-radius: 12px; padding: 18px;
+  position: relative; overflow: hidden;
+}
+.ai-card::after {
+  content: '✦'; position: absolute; top: -8px; right: -8px;
+  font-size: 60px; opacity: 0.06;
+}
+.ai-header { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+.ai-ring {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: linear-gradient(135deg, #7b61ff, #b37feb);
+  display: flex; align-items: center; justify-content: center;
+  animation: pulse-ring 2s infinite;
+}
+@keyframes pulse-ring {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(123,97,255,0.35); }
+  50% { box-shadow: 0 0 0 8px rgba(123,97,255,0); }
+}
+.ai-main-text { font-size: 14px; line-height: 1.75; color: #333; margin-bottom: 14px; }
+.ai-chips { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.ai-chip {
+  display: flex; gap: 8px; font-size: 13px;
+  align-items: flex-start;
+}
+.chip-area { background: #7b61ff; color: #fff; padding: 1px 8px; border-radius: 4px; font-size: 11px; white-space: nowrap; }
+.ai-quick-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* 三栏布局 */
+.three-col { display: grid; grid-template-columns: 300px 1fr 320px; gap: 16px; }
+
+/* 两栏布局 */
+.two-col { display: grid; grid-template-columns: 1fr 340px; gap: 16px; }
+
+/* 快速操作网格 */
+.quick-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.quick-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 16px 10px; border-radius: 10px; cursor: pointer;
+  border: 1px solid #ebeef5; font-size: 12px; color: #666;
+  transition: all 0.2s; background: #fff;
+}
+.quick-btn:hover { border-color: #0052d9; color: #0052d9; background: rgba(0,82,217,0.03); }
+.quick-btn i { font-size: 24px; }
+
+/* 分页 */
+.pagination { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; font-size: 13px; color: #999; }
+
+/* 响应式 */
+@media (max-width: 1200px) {
+  .three-col { grid-template-columns: 1fr; }
+  .two-col { grid-template-columns: 1fr; }
+  .kpi-row { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 700px) {
+  .tab-bar { flex-direction: column; }
+  .kpi-row { grid-template-columns: repeat(2, 1fr); }
+  .filter-bar { flex-direction: column; align-items: stretch; }
+  .f-select, .f-input { width: 100%; }
+}
+
+/* 滚动条美化 */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-thumb { background: #ddd; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #bbb; }
+</style>
+</head>
+
+<body>
+
+<div id="app">
+<div class="app-container">
+
+  <!-- ==================== 顶部导航 ==================== -->
+  <nav class="top-nav">
+    <div class="nav-brand">
+      <div class="nav-logo">⚡</div>
+      <div class="nav-title">
+        <h1>实习能量站 · 成长导航智能看板</h1>
+        <small>Intern Energy Station — Demo Preview</small>
+      </div>
+    </div>
+    <div class="nav-user">
+      <div class="user-avatar">HR</div>
+      <span>管理员 · HR部</span>
+    </div>
+  </nav>
+
+  <!-- ==================== 标签页切换 ==================== -->
+  <div class="tab-bar">
+    <button
+      v-for="(tab, idx) in tabs"
+      :key="idx"
+      class="tab-btn" :class="{ active: activeTab === idx }"
+      @click="activeTab = idx"
+    >
+      <span class="tab-icon">{{ tab.icon }}</span>
+      {{ tab.label }}
+    </button>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- ===== TAB 0: 实习生仪表盘 ===== -->
+  <!-- ============================================================ -->
+  <div v-show="activeTab === 0">
+
+    <!-- 欢迎横幅 -->
+    <div class="welcome-banner">
+      <div class="wb-avatar">张</div>
+      <div class="wb-info">
+        <h3>张小明，欢迎回来！👋</h3>
+        <p>重庆邮电大学 · 计算机科学与技术 · 技术研发部 · 第 8 周</p>
+        <div class="wb-tags">
+          <span class="wt-tag">前端开发轨道</span>
+          <span class="wt-tag">L2 成长期</span>
+          <span class="wt-tag">能量值 ⚡ 68</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="three-col">
+      <!-- 左：当前阶段 -->
+      <div class="panel">
+        <div class="panel-hd"><span>📍 当前成长阶段</span></div>
+        <div style="margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:#999;margin-bottom:6px;">
+            <span>L2 成长期进度</span><strong style="color:#0052d9;">68%</strong>
+          </div>
+          <div class="progress-track"><div class="progress-fill" :style="{width:'68%',background:'linear-gradient(90deg,#0052d9,#36a3ff)'}"></div></div>
+        </div>
+        <div class="stage-timeline">
+          <div class="st-item st-done">
+            <div class="st-dot" style="color:#00a870;"></div>
+            <div class="st-body">
+              <h4 style="color:#00a870;">L1 入门期 ✓</h4>
+              <p>第1~4周 | 熟悉环境、配置开发工具、学习团队规范、完成新人任务</p>
+            </div>
+          </div>
+          <div class="st-item st-active">
+            <div class="st-dot" style="color:#0052d9;border-color:#0052d9;"></div>
+            <div class="st-body">
+              <h4 style="color:#0052d9;">L2 成长期 (当前)</h4>
+              <p>第5~8周 | 独立承担模块开发、参与代码评审、学习设计模式</p>
+              <div style="margin-top:8px;"><div class="progress-track"><div class="progress-fill" :style="{width:'68%',background:'#0052d9'}"></div></div></div>
+            </div>
+          </div>
+          <div class="st-item st-future">
+            <div class="st-dot" style="border-color:#ccc;color:#ccc;"></div>
+            <div class="st-body">
+              <h4 style="color:#bbb;">L3 进阶期</h4>
+              <p>第9~12周 | 主导小型项目、技术分享、独立完成复杂需求</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 中：本周任务 -->
+      <div class="panel">
+        <div class="panel-hd">
+          <span>📋 本周任务列表</span>
+          <span class="tag tag-blue">5 项</span>
+        </div>
+        <div class="task-list">
+          <div class="task-card" v-for="task in internTasks" :key="task.id">
+            <div class="tc-top">
+              <span class="tc-title">{{ task.title }}</span>
+              <div class="tc-meta">
+                <span class="tag" :class="task.statusClass">{{ task.statusText }}</span>
+                <small style="color:#bbb;">{{ task.difficulty }}★</small>
+              </div>
+            </div>
+            <p class="tc-desc">{{ task.desc }}</p>
+            <div class="tc-meta" style="margin-top:6px;">
+              <span v-for="sk in task.skills" :key="sk" class="tag tag-gray">{{ sk }}</span>
+            </div>
+            <div class="tc-footer">
+              <div class="progress-wrap" v-if="task.progress < 100 && task.status !== 'pending'">
+                <div class="progress-track">
+                  <div class="progress-fill" :style="{width: task.progress+'%',background:getProgressColor(task.progress)}"></div>
+                </div>
+                <span class="progress-pct">{{ task.progress }}%</span>
+              </div>
+              <button class="btn-sm" :class="task.status==='completed'?'btn-outline':'btn-primary'">
+                {{ task.statusTextBtn }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 右：AI 成长建议 -->
+      <div class="ai-card">
+        <div class="ai-header">
+          <div class="ai-ring">✨</div>
+          <div>
+            <strong style="font-size:15px;">AI 成长建议</strong>
+            <br><small style="color:#999;">基于你的实时数据智能分析</small>
+          </div>
+        </div>
+        <div class="ai-main-text">
+          {{ aiAdvice.main }}
+        </div>
+        <div class="ai-chips">
+          <div class="ai-chip" v-for="(chip, ci) in aiAdvice.actions" :key="ci">
+            <span class="chip-area">{{ chip.area }}</span>
+            <span>{{ chip.action }}</span>
+          </div>
+        </div>
+        <div class="ai-section-title">📊 能力雷达 (6维度)</div>
+        <div class="ai-radar">
+          <div class="radar-item" v-for="(r, ri) in aiAdvice.radar" :key="ri">
+            <div class="radar-val" :class="r.cls">{{ r.score }}</div>
+            <div class="radar-label">{{ r.label }}</div>
+          </div>
+        </div>
+        <div class="ai-quick-btns">
+          <button class="btn-sm btn-primary">🧠 AI 简历诊断</button>
+          <button class="btn-sm btn-outline">🎤 模拟面试</button>
+          <button class="btn-sm btn-outline">📚 学习推荐</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- ===== TAB 1: 导师工作台 ===== -->
+  <!-- ============================================================ -->
+  <div v-show="activeTab === 1">
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+      <div>
+        <h2 style="font-size:20px;margin:0;">导师工作台</h2>
+        <p style="font-size:13px;color:#999;margin:4px 0 0;">管理你的实习生，AI 辅助带教决策</p>
+      </div>
+      <button class="btn-primary">+ 分配新任务</button>
+    </div>
+
+    <!-- KPI -->
+    <div class="kpi-row">
+      <div class="kpi-card kp-blue"><div class="kpi-icon-row"><span class="ki">👥</span></div><div class="kpi-val">3</div><div class="kpi-lbl">负责实习生</div></div>
+      <div class="kpi-card kp-green"><div class="kpi-icon-row"><span class="ki">✅</span></div><div class="kpi-val">67<sub>%</sub></div><div class="kpi-lbl">平均完成率</div></div>
+      <div class="kpi-card kp-orange"><div class="kpi-icon-row"><span class="ki">⏳</span></div><div class="kpi-val">4</div><div class="kpi-lbl">待评价任务</div></div>
+      <div class="kpi-card kp-red"><div class="kpi-icon-row"><span class="ki">⚠️</span></div><div class="kpi-val">1</div><div class="kpi-lbl">需关注</div></div>
+    </div>
+
+    <div class="two-col">
+      <!-- 左：表格 -->
+      <div class="panel">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width:200px;">实习生</th>
+              <th>部门 / 轨道</th>
+              <th style="width:110px;">阶段</th>
+              <th style="width:160px;">进度</th>
+              <th style="width:70px;">评分</th>
+              <th style="width:140px;">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="stu in mentorList" :key="stu.id">
+              <td>
+                <div class="cell-name">
+                  <div class="cell-avatar" :class="'av-'+stu.id">{{ stu.name[0] }}</div>
+                  <div>
+                    <strong>{{ stu.name }}</strong><br>
+                    <small style="color:#999;">{{ stu.school }}</small>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <strong>{{ stu.dept }}</strong><br>
+                <small style="color:#999;">{{ stu.track }}</small>
+              </td>
+              <td><span class="tag" :class="'tag-'+stu.stageColor">L{{ stu.level }} {{ stu.stageName }}</span></td>
+              <td>
+                <div class="progress-wrap">
+                  <div class="progress-track">
+                    <div class="progress-fill" :style="{width:stu.progress+'%',background:getProgressColor(stu.progress)}"></div>
+                  </div>
+                  <span class="progress-pct">{{ stu.progress }}%</span>
+                </div>
+              </td>
+              <td><span class="score-num" :class="stu.scoreClass">{{ stu.score }}</span></td>
+              <td>
+                <button class="btn-sm" @click="openAIModal(stu)">💬 AI 建议</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 右：AI 建议区 -->
+      <div>
+        <div class="panel">
+          <div class="panel-hd"><span>💡 AI 带教助手</span></div>
+          <p style="font-size:13px;color:#666;line-height:1.6;">
+            点击左侧实习生的「AI 建议」按钮，获取个性化带教话术和行动建议。
+          </p>
+          <div style="margin-top:12px;padding:12px;background:#f8faff;border-radius:8px;border:1 dashed #c9d6ff;">
+            <strong style="font-size:13px;color:#0052d9;">📌 今日提示</strong>
+            <ul style="font-size:12px;color:#666;margin:8px 0 0 16px;line-height:1.8;">
+              <li>王小刚连续 9 天未更新周报，建议主动沟通</li>
+              <li>张小明的组件化任务已超时，需评估是否需要协助</li>
+              <li>李小红表现优异，可考虑安排技术分享机会</li>
+            </ul>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-hd"><span>⚡ 快捷操作</span></div>
+          <div class="quick-grid">
+            <div class="quick-btn"><i>📝</i><span>批量评价</span></div>
+            <div class="quick-btn"><i>📊</i><span>导出报告</span></div>
+            <div class="quick-btn"><i>🔔</i><span>群发提醒</span></div>
+            <div class="quick-btn"><i>🎯</i><span>制定计划</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- ===== TAB 2: HR 总览 ===== -->
+  <!-- ============================================================ -->
+  <div v-show="activeTab === 2">
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+      <div>
+        <h2 style="font-size:20px;margin:0;">📊 HR 总览看板</h2>
+        <p style="font-size:13px;color:#999;margin:4px 0 0;">实习人才全景监控 · 数据更新于 {{ nowTime }}</p>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-outline" @click="refreshData">🔄 刷新</button>
+        <button class="btn-primary">📥 导出报告</button>
+      </div>
+    </div>
+
+    <!-- KPI 行 -->
+    <div class="kpi-row">
+      <div class="kpi-card kp-blue">
+        <div class="kpi-icon-row"><span class="ki">👥</span><span class="tag tag-green" style="font-size:11px;padding:1px 8px;">+2 新增</span></div>
+        <div class="kpi-val">6</div>
+        <div class="kpi-lbl">实习生总数</div>
+        <div style="display:flex;gap:12px;margin-top:6px;font-size:11px;">
+          <span style="color:#00a870;">在岗 6</span><span style="color:#999;">离职 0</span>
+        </div>
+      </div>
+      <div class="kpi-card kp-green">
+        <div class="kpi-icon-row"><span class="ki">✅</span></div>
+        <div class="kpi-val">100<sub>%</sub></div>
+        <div class="kpi-lbl">在岗率</div>
+        <div style="margin-top:8px;"><div class="progress-track"><div class="progress-fill" :style="{width:'100%',background:'#00a870'}"></div></div></div>
+      </div>
+      <div class="kpi-card kp-orange">
+        <div class="kpi-icon-row"><span class="ki">📈</span></div>
+        <div class="kpi-val">65<sub>%</sub></div>
+        <div class="kpi-lbl">平均进度</div>
+        <div class="kpi-compare" style="font-size:12px;margin-top:4px;color:#00a870;">↑ 较上周 +3.5%</div>
+      </div>
+      <div class="kpi-card kp-red">
+        <div class="kpi-icon-row"><span class="ki">⚠️</span><span class="tag tag-red" style="font-size:11px;padding:1px 8px;">需关注</span></div>
+        <div class="kpi-val danger-num">3</div>
+        <div class="kpi-lbl">风险人数</div>
+        <div style="display:flex;gap:10px;margin-top:6px;font-size:11px;color:#666;">
+          <span><i class="dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#e34d59;margin-right:3px;"></i>3 落后</span>
+          <span><i class="dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#ed7b2f;margin-right:3px;"></i>1 停滞</span>
+        </div>
+      </div>
+      <div class="kpi-card kp-purple">
+        <div class="kpi-icon-row"><span class="ki">⭐</span></div>
+        <div class="kpi-val">82</div>
+        <div class="kpi-lbl">平均评分</div>
+        <div style="margin-top:6px;color:#ffb800;font-size:14px;">★★★★☆</div>
+      </div>
+    </div>
+
+    <!-- 主内容行 -->
+    <div class="main-layout" style="display:grid;grid-template-columns:320px 1fr 280px;gap:16px;">
+      
+      <!-- 左：图表 -->
+      <div>
+        <div class="panel">
+          <div class="panel-hd"><span>📊 进度分布</span><span class="tag tag-gray">{{ hrFiltered.length }}人</span></div>
+          
+          <!-- 柱状图 -->
+          <div class="chart-bars">
+            <div class="bar-row" v-for="(bar, bi) in hrBarData" :key="bi">
+              <div class="bar-label">{{ bar.label }}</div>
+              <div class="bar-track">
+                <div class="bar-fill" :style="{width: bar.pct+'%', background: bar.color}">
+                  {{ bar.count > 0 ? bar.pct+'%' : '' }}
+                </div>
+              </div>
+              <div class="bar-count">{{ bar.count }}</div>
+            </div>
+          </div>
+
+          <!-- 饼图 -->
+          <div class="pie-area">
+            <div class="pie-chart-css" :style="{ background: hrPieGradient }">
+              <div class="pie-center"><b>{{ hrCompletionPct }}%</b><small>完成率</small></div>
+            </div>
+            <div class="pie-legend">
+              <div class="legend-row" v-for="(lg, li) in hrPieLegend" :key="li">
+                <div class="ldot" :style="{background:lg.color}"></div>
+                <span>{{ lg.label }} ({{ lg.count }})</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 阶段分布 -->
+        <div class="panel">
+          <div class="panel-hd"><span>📍 阶段分布</span></div>
+          <div v-for="(st, si) in hrStageData" :key="si" style="margin-bottom:10px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+              <span class="tag" :class="'tag-'+st.theme">L{{ st.level }}</span>
+              <span style="flex:1;font-size:13px;">{{ st.name }}</span>
+              <strong style="font-size:13px;color:#666;">{{ st.count }}人</strong>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" :style="{width:(st.count/hrFiltered.length*100)+'%',background:st.color}"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 中：表格+筛选 -->
+      <div>
+        <!-- 筛选 -->
+        <div class="filter-bar">
+          <input class="f-input" v-model="hrSearch" placeholder="搜索姓名 / 学校..." />
+          <select class="f-select" v-model="hrFilterTrack">
+            <option value="">全部岗位</option>
+            <option value="前端开发">前端开发</option>
+            <option value="后端开发">后端开发</option>
+            <option value="安全工程师">安全工程师</option>
+            <option value="产品经理">产品经理</option>
+            <option value="法务专员">法务专员</option>
+          </select>
+          <select class="f-select" v-model="hrFilterStage">
+            <option value="">全部阶段</option>
+            <option value="1">L1 入门期</option>
+            <option value="2">L2 成长期</option>
+            <option value="3">L3 进阶期</option>
+          </select>
+          <label class="f-chk"><input type="checkbox" v-model="hrOnlyRisk" /> 仅风险</label>
+        </div>
+
+        <!-- 表格 -->
+        <div class="panel" style="padding:0;overflow:hidden;">
+          <table class="data-table" style="margin:0;">
+            <thead>
+              <tr>
+                <th style="width:170px;">姓名</th>
+                <th>部门</th>
+                <th>岗位轨道</th>
+                <th style="width:90px;">阶段</th>
+                <th style="width:150px;">进度</th>
+                <th style="width:60px;">评分</th>
+                <th style="width:130px;">状态</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="row in hrPaged" :key="row.id">
+                <td>
+                  <div class="cell-name">
+                    <div class="cell-avatar" :class="'av-'+row.id">{{ row.name[0] }}</div>
+                    <div><strong>{{ row.name }}</strong><br><small style="color:#999;">{{ row.school }}</small></div>
+                  </div>
+                </td>
+                <td><strong>{{ row.dept }}</strong></td>
+                <td style="font-size:12px;">{{ row.track }}</td>
+                <td><span class="tag" :class="'tag-'+row.sColor">L{{ row.level }} {{ row.sName }}</span></td>
+                <td>
+                  <div class="progress-wrap">
+                    <div class="progress-track"><div class="progress-fill" :style="{width:row.progress+'%',background:getProgressColor(row.progress)}"></div></div>
+                    <span class="progress-pct">{{ row.progress }}%</span>
+                  </div>
+                </td>
+                <td><span class="score-num" :class="row.scCls">{{ row.score??'-' }}</span></td>
+                <td>
+                  <span v-if="row.behind" class="tag tag-red">⚠ 落后</span>
+                  <span v-else-if="row.stagnant" class="tag tag-orange">⏳ 停滞</span>
+                  <span v-else-if="row.score >= 85" class="tag tag-green">✓ 优秀</span>
+                  <span v-else style="color:#ccc;font-size:12px;">-</span>
+                </td>
+              </tr>
+              <tr v-if="hrPaged.length === 0">
+                <td colspan="7" style="text-align:center;padding:30px;color:#999;">无匹配数据</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="pagination" style="padding:10px 16px;">
+            <span>共 {{ hrFiltered.length }} 条记录</span>
+            <span>第 {{ hrPage }} / {{ hrTotalPages }} 页</span>
+            <div style="display:flex;gap:6px;">
+              <button class="btn-sm" :disabled="hrPage<=1" @click="hrPage--">上一页</button>
+              <button class="btn-sm" :disabled="hrPage>=hrTotalPages" @click="hrPage++">下一页</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 右：风险名单 -->
+      <div>
+        <div class="alert-banner alert-danger" v-if="hrRiskList.length > 0">
+          <strong>!</strong> 发现 {{ hrRiskList.length }} 名需要关注的实习生，请及时与对应导师沟通。
+        </div>
+        
+        <div class="panel">
+          <div class="panel-hd" style="color:#e34d59;">
+            <span>⚠️ 风险名单</span>
+            <span class="tag tag-red">{{ hrRiskList.length }}</span>
+          </div>
+          
+          <template v-if="hrRiskList.length > 0">
+            <div class="risk-card" :class="rc.behind?'rc-behind':'rc-stagnant'" v-for="rc in hrRiskList" :key="rc.id">
+              <div class="rc-top">
+                <div class="cell-avatar" :class="'av-'+rc.id">{{ rc.name[0] }}</div>
+                <div class="rc-info">
+                  <strong>{{ rc.name }}</strong><br>
+                  <small>{{ rc.track }} · L{{ rc.level }} {{ rc.sName }}</small>
+                </div>
+                <span class="tag" :class="rc.behind?'tag-red':'tag-orange'">{{ rc.behind?'落后':'停滞' }}</span>
+              </div>
+              <div style="font-size:12px;margin-bottom:6px;display:flex;justify-content:space-between;">
+                <span style="color:#999;">当前进度</span>
+                <div class="progress-wrap" style="flex:1;margin-left:12px;">
+                  <div class="progress-track"><div class="progress-fill" :style="{width:rc.progress+'%',background:'#e34d59'}"></div></div>
+                  <span class="progress-pct" style="color:#e34d59;">{{ rc.progress }}%</span>
+                </div>
+              </div>
+              <div style="font-size:12px;margin-bottom:6px;display:flex;justify-content:space-between;">
+                <span style="color:#999;">最后活跃</span>
+                <strong :style="{color:rc.stagnant?'#ed7b2f':'#333'}">{{ rc.lastActive }}</strong>
+              </div>
+              <div style="font-size:12px;display:flex;justify-content:space-between;">
+                <span style="color:#999;">导师</span>
+                <span>{{ rc.mentor || '未分配' }}</span>
+              </div>
+              <div class="rc-actions">
+                <button class="btn-sm">查看详情</button>
+                <button class="btn-sm" style="border-color:#e34d59;color:#e34d59;">通知导师</button>
+              </div>
+            </div>
+          </template>
+          <div v-else style="text-align:center;padding:30px;color:#aaa;font-size:13px;">暂无风险人员 🎉</div>
+        </div>
+
+        <!-- 快速操作 -->
+        <div class="panel">
+          <div class="panel-hd"><span>⚡ 快速操作</span></div>
+          <div class="quick-grid">
+            <div class="quick-btn"><i>👥</i><span>管理档案</span></div>
+            <div class="quick-btn"><i>🔔</i><span>批量提醒</span></div>
+            <div class="quick-btn"><i>📄</i><span>生成报告</span></div>
+            <div class="quick-btn"><i>🧠</i><span>AI 分析</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /app-container -->
+
+<!-- ==================== AI 弹窗 ==================== -->
+<div class="modal-overlay" v-if="showAIModal" @click.self="showAIModal=false">
+  <div class="modal-box">
+    <div class="modal-hd">
+      <h3>💬 AI 带教建议 — {{ aiModalTarget?.name }}</h3>
+      <button class="modal-close" @click="showAIModal=false">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="ai-bubble">
+        「{{ aiModalTarget?.name }}」{{ aiModalTarget?.track }}方向实习生，
+        当前处于 <strong>L{{ aiModalTarget?.level }} {{ aiModalTarget?.stageName }}</strong>，
+        整体进度 <strong>{{ aiModalTarget?.progress }}%</strong>，综合评分 <strong>{{ aiModalTarget?.score }}</strong> 分。
+        {{ aiModalAdvice.bubble }}
+      </div>
+
+      <div class="ai-section-title">📌 带教行动项</div>
+      <div class="ai-chips">
+        <div class="ai-chip" v-for="(act, ai) in aiModalAdvice.actions" :key="ai">
+          <span class="chip-area">{{ act.area }}</span>
+          <span>{{ act.action }}</span>
+        </div>
+      </div>
+
+      <div class="ai-section-title" v-if="aiModalAdvice.concerns.length">⚠️ 关注点</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;" v-if="aiModalAdvice.concerns.length">
+        <span class="tag tag-red" v-for="(c,ci) in aiModalAdvice.concerns" :key="ci">{{ c }}</span>
+      </div>
+
+      <div class="ai-section-title">📊 能力评估</div>
+      <div class="ai-radar">
+        <div class="radar-item" v-for="(r,ri) in aiModalAdvice.radar" :key="ri">
+          <div class="radar-val" :class="r.cls">{{ r.score }}</div>
+          <div class="radar-label">{{ r.label }}</div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:18px;">
+        <button class="btn-sm" style="flex:1;padding:8px;">📋 复制话术到剪贴板</button>
+        <button class="btn-primary" style="flex:1;" @click="showAIModal=false">知道了</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /#app -->
+
+<script>
+const { createApp, ref, computed, onMounted } = Vue
+
+createApp({
+  setup() {
+    // ====== 标签页 ======
+    const tabs = [
+      { icon: '👤', label: '实习生仪表盘' },
+      { icon: '👨‍🏫', label: '导师工作台' },
+      { icon: '📊', label: 'HR 总览' }
+    ]
+    const activeTab = ref(0)
+
+    // ====== 工具函数 ======
+    function getProgressColor(p) {
+      if (p < 50) return '#e34d59'
+      if (p < 70) return '#ed7b2f'
+      if (p < 90) return '#00a870'
+      return '#0052d9'
+    }
+    function scoreClass(s) { if (!s) return ''; if (s>=85) return 'sc-high'; if (s>=70) return 'sc-mid'; return 'sc-low'; }
+    function radarClass(s) { if (s>=85) return 'rv-good'; if (s>=60) return 'rv-mid'; return 'rv-low'; }
+
+    // ====== 实习生仪表盘数据 ======
+    const internTasks = ref([
+      { id:1, title:'完成用户中心组件重构', desc:'将用户信息模块拆分为独立组件，使用 Composition API 重构，提升复用性。要求覆盖单元测试。', status:'in_progress', statusText:'进行中', statusTextBtn:'继续开发', statusClass:'tag-blue', progress:65, difficulty:'●●●○', skills:['Vue3','TypeScript','单元测试'] },
+      { id:2, title:'优化首页加载性能', desc:'针对首屏白屏问题进行性能优化，目标 LCP < 2.5s。包括懒加载、代码分割、资源压缩等手段。', status:'in_progress', statusText:'进行中', statusTextBtn:'继续开发', statusClass:'tag-blue', progress:40, difficulty:'●●●●', skills:['性能优化','Webpack','Lighthouse'] },
+      { id:3, title:'编写 API 对接文档', desc:'为前后端联调编写详细的接口文档，包含请求参数说明、返回数据结构、错误码定义等。', status:'pending', statusText:'待开始', statusTextBtn:'开始任务', statusClass:'tag-gray', progress:0, difficulty:'●●○○', skills:['文档写作','RESTful','Swagger'] },
+      { id:4, title:'参与 Code Review', desc:'审查团队成员提交的前端 PR，关注代码规范、逻辑正确性、潜在 bug 等，并给出建设性反馈意见。', status:'completed', statusText:'已完成', statusTextBtn:'查看详情', statusClass:'tag-green', progress:100, difficulty:'●●○○', skills:['Code Review','Git','协作'] },
+      { id:5, title:'学习 Pinia 状态管理', desc:'自学 Pinia 的核心概念和使用方式，完成官方教程中的示例练习，并在小组内做一次技术分享。', status:'pending', statusText:'待开始', statusTextBtn:'开始任务', statusClass:'tag-gray', progress:0, difficulty:'●○○○', skills:['Pinia','自学','技术分享'] }
+    ])
+
+    const aiAdvice = ref({
+      main: '你目前处于「L2 成长期」的中段（进度 68%），整体表现稳定。前端基础能力扎实，但在「系统设计」和「跨端能力」两个维度还有较大提升空间。建议本周重点推进组件重构任务的收尾工作，同时开始预习下一阶段的微前端知识。',
+      actions: [
+        { area: '技术深度', action: '深入学习 TypeScript 泛型与高级类型，提升代码质量感知力' },
+        { area: '工程实践', action: '尝试独立搭建一个小型 CLI 工具，锻炼工程化思维' },
+        { area: '软技能', action: '在下次站会上主动分享一个技术方案，锻炼表达能力' }
+      ],
+      radar: [
+        { score:85, label:'前端开发', cls:'rv-good' }, { score:72, label:'后端基础', cls:'rv-mid' },
+        { score:78, label:'协作沟通', cls:'rv-mid' }, { score:60, label:'系统设计', cls:'rv-low' },
+        { score:88, label:'学习能力', cls:'rv-good' }, { score:55, label:'跨端能力', cls:'rv-low' }
+      ]
+    })
+
+    // ====== 导师工作台数据 ======
+    const mentorList = ref([
+      { id:1, name:'张小明', school:'重庆邮电大学', dept:'技术研发部', track:'前端开发工程师', level:2, stageName:'成长期', stageColor:'green', progress:68, score:82, scoreClass:scoreClass(82) },
+      { id:2, name:'李小红', school:'电子科技大学', dept:'技术研发部', track:'后端开发工程师', level:2, stageName:'成长期', stageColor:'green', progress:75, score:88, scoreClass:scoreClass(88) },
+      { id:3, name:'王小刚', school:'四川大学', dept:'信息安全部', track:'安全工程师', level:1, stageName:'入门期', stageColor:'blue', progress:35, score:65, scoreClass:scoreClass(65) }
+    ])
+
+    const showAIModal = ref(false)
+    const aiModalTarget = ref(null)
+    const aiModalAdvice = ref({ bubble:'', actions:[], concerns:[], radar:[] })
+
+    function openAIModal(stu) {
+      aiModalTarget.value = stu
+      showAIModal.value = true
+      // 模拟不同学生的 AI 建议
+      const advices = {
+        1: {
+          bubble: '该同学在前端开发方面展现出较强的学习能力，组件化意识正在形成。近期可以引导其关注架构层面的思考，而不仅仅是功能实现。',
+          actions:[
+            {area:'技术指导',action:'建议在 Code Review 中多提问「为什么这样设计」，引导其思考权衡'},
+            {area:'任务安排',action:'可分配一个中等难度的独立模块让其全权负责'},
+            {area:'软技能培养',action:'鼓励其在团队内进行一次技术方案讲解'}
+          ],
+          concerns:['组件化思维仍需加强', 'TypeScript 使用偏基础'],
+          radar:[{score:85,label:'前端开发',cls:'rv-good'},{score:62,label:'系统设计',cls:'rv-low'},{score:78,label:'协作沟通',cls:'rv-mid'},{score:70,label:'编码规范',cls:'rv-mid'},{score:90,label:'学习能力',cls:'rv-good'},{score:58,label:'测试意识',cls:'rv-low'}]
+        },
+        2: {
+          bubble: '该同学在后端领域表现出色，代码质量较高，是组内的标杆成员。可以考虑赋予更多技术决策权，培养其 Lead 潜质。',
+          actions:[
+            {area:'技术挑战',action:'可安排参与中间件或公共库的设计与实现'},
+            {area:'领导力培养',action:'让其在下个迭代中担任 Tech Lead 角色'},
+            {area:'职业规划',action:'与其讨论未来 6-12 个月的技术成长路径'}
+          ],
+          concerns:[],
+          radar:[{score:90,label:'后端开发',cls:'rv-good'},{score:82,label:'数据库',cls:'rv-good'},{score:85,label:'协作沟通',cls:'rv-good'},{score:88,label:'编码规范',cls:'rv-good'},{score:80,label:'学习能力',cls:'rv-good'},{score:70,label:'系统设计',cls:'rv-mid'}]
+        },
+        3: {
+          bubble: '该同学当前处于入门阶段，进度明显滞后于预期。需要重点关注其学习状态和工作习惯，建议增加 1-on-1 沟通频次，了解是否存在阻碍因素。',
+          actions:[
+            {area:'紧急干预',action:'本周安排至少 2 次 1-on-1，了解具体困难'},
+            {area:'任务调整',action:'将当前大任务拆解为更小的里程碑，降低心理压力'},
+            {area:'同伴支持',action:'考虑安排与李小红结对编程，通过观察学习'}
+          ],
+          concerns:['⚠️ 连续 9 天未提交周报','⚠️ 进度仅 35%，严重滞后','⚠️ 缺乏主动性'],
+          radar:[{score:45,label:'安全基础',cls:'rv-low'},{score:40,label:'开发能力',cls:'rv-low'},{score:55,label:'协作沟通',cls:'rv-low'},{score:50,label:'学习效率',cls:'rv-low'},{score:65,label:'态度',cls:'rv-mid'},{score:48,label:'规范意识',cls:'rv-low'}]
+        }
+      }
+      aiModalAdvice.value = advices[stu.id] || advices[1]
+    }
+
+    // ====== HR 总览数据 ======
+    const nowTime = ref('')
+    function updateNow() {
+      const d = new Date()
+      nowTime.value = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
+    }
+    onMounted(() => { updateNow(); setInterval(updateNow, 30000) })
+    
+    const refreshData = () => { alert('📊 数据已刷新！（Demo 中为模拟刷新）') }
+
+    const hrSearch = ref('')
+    const hrFilterTrack = ref('')
+    const hrFilterStage = ref('')
+    const hrOnlyRisk = ref(false)
+    const hrPage = ref(1)
+
+    const hrAllInterns = ref([
+      { id:1, name:'张小明', school:'重庆邮电大学', dept:'技术研发部', track:'前端开发', level:2, sName:'成长期', sColor:'green', progress:68, score:82, scCls:scoreClass(82), behind:true, stagnant:false, lastActive:'2天前', mentor:'李导师' },
+      { id:2, name:'李小红', school:'电子科技大学', dept:'技术研发部', track:'后端开发', level:2, sName:'成长期', sColor:'green', progress:75, score:88, scCls:scoreClass(88), behind:false, stagnant:false, lastActive:'1天前', mentor:'王导师' },
+      { id:3, name:'王小刚', school:'四川大学', dept:'信息安全部', track:'安全工程师', level:1, sName:'入门期', sColor:'blue', progress:35, score:65, scCls:scoreClass(65), behind:true, stagnant:true, lastActive:'9天前', mentor:'赵导师' },
+      { id:4, name:'陈小美', school:'西南大学', dept:'产品设计部', track:'产品经理', level:2, sName:'成长期', sColor:'green', progress:80, score:90, scCls:scoreClass(90), behind:false, stagnant:false, lastActive:'今天', mentor:'孙导师' },
+      { id:5, name:'刘小强', school:'重庆大学', dept:'技术研发部', track:'前端开发', level:1, sName:'入门期', sColor:'blue', progress:42, score:72, scCls:scoreClass(72), behind:true, stagnant:false, lastActive:'3天前', mentor:'李导师' },
+      { id:6, name:'赵小雨', school:'西南政法大学', dept:'法务合规部', track:'法务专员', level:3, sName:'进阶期', sColor:'orange', progress:92, score:95, scCls:scoreClass(95), behind:false, stagnant:false, lastActive:'今天', mentor:'钱导师' }
+    ])
+
+    const hrFiltered = computed(() => {
+      let list = [...hrAllInterns.value]
+      if (hrSearch.value) {
+        const q = hrSearch.value.toLowerCase()
+        list = list.filter(i => i.name.toLowerCase().includes(q) || i.school.toLowerCase().includes(q))
+      }
+      if (hrFilterTrack.value) list = list.filter(i => i.track.includes(hrFilterTrack.value))
+      if (hrFilterStage.value) list = list.filter(i => String(i.level) === hrFilterStage.value)
+      if (hrOnlyRisk.value) list = list.filter(i => i.behind || i.stagnant)
+      return list
+    })
+
+    const hrTotalPages = computed(() => Math.max(1, Math.ceil(hrFiltered.value.length / 5)))
+    const hrPaged = computed(() => {
+      const start = (hrPage.value - 1) * 5
+      return hrFiltered.value.slice(start, start + 5)
+    })
+
+    const hrRiskList = computed(() => hrAllInterns.value.filter(i => i.behind || i.stagnant))
+
+    // 柱状图数据
+    const hrBarData = computed(() => {
+      const list = hrFiltered.value
+      const ranges = [
+        { label:'0-30% 需关注', min:0, max:30, color:'#e34d59' },
+        { label:'31-50%', min:31, max:50, color:'#ed7b2f' },
+        { label:'51-70%', min:51, max:70, color:'#e8a926' },
+        { label:'71-90%', min:71, max:90, color:'#00a870' },
+        { label:'91-100% 优秀', min:91, max:100, color:'#0052d9' }
+      ]
+      return ranges.map(r => {
+        const cnt = list.filter(i => i.progress >= r.min && i.progress <= r.max).length
+        return { ...r, count:cnt, pct:list.length?Math.round(cnt/list.length*100):0 }
+      })
+    })
+
+    // 饼图数据
+    const hrPieLegend = computed(() => {
+      const list = hrFiltered.value
+      const exc = list.filter(i=>i.progress>=90).length
+      const ok = list.filter(i=>i.progress>=50&&i.progress<90).length
+      const lg = list.filter(i=>i.progress<50).length
+      return [
+        { label:'优秀(≥90%)', count:exc, color:'#0052d9' },
+        { label:'正常(50~89%)', count:ok, color:'#00a870' },
+        { label:'滞后(<50%)', count:lg, color:'#ed7b2f' }
+      ]
+    })
+    const hrPieGradient = computed(() => {
+      const lg = hrPieLegend.value
+      const total = hrFiltered.value.length || 1
+      let s = 0
+      return { background: `conic-gradient(${lg.map(item=>{
+        const d = item.count/total*360
+        const seg=`${item.color} ${s}deg ${s+d}deg`
+        s+=d;return seg}).join(', ')})` }
+    })
+    const hrCompletionPct = computed(() => {
+      const list = hrFiltered.value
+      return list.length ? Math.round(list.filter(i=>i.progress>=70).length/list.length*100) : 0
+    })
+
+    // 阶段分布
+    const hrStageData = computed(() => {
+      const list = hrFiltered.value
+      const stages = [
+        { level:1, name:'入门期', theme:'blue', color:'#0052d9' },
+        { level:2, name:'成长期', theme:'green', color:'#00a870' },
+        { level:3, name:'进阶期', theme:'orange', color:'#ed7b2f' }
+      ]
+      return stages.map(s => ({ ...s, count:list.filter(i=>i.level===s.level).length }))
+    })
+
+    return {
+      tabs, activeTab,
+      internTasks, aiAdvice,
+      mentorList, showAIModal, aiModalTarget, aiModalAdvice, openAIModal,
+      getProgressColor, scoreClass,
+      hrAllInterns, hrFiltered, hrPaged, hrRiskList, hrPage, hrTotalPages,
+      hrSearch, hrFilterTrack, hrFilterStage, hrOnlyRisk,
+      hrBarData, hrPieLegend, hrPieGradient, hrCompletionPct, hrStageData,
+      nowTime, refreshData, radarClass
+    }
+  }
+}).mount('#app')
+</script>
+
+</body>
+</html>
