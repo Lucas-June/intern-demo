@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>实习能量站 · 成长导航智能看板 - Demo</title>
+<!-- jsdelivr CDN — 比 unpkg 更可靠，GitHub Pages 友好 -->
+<script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+<style>
+/* ================================================================
+   全局样式 — 与登录页风格统一：山景背景 + 金色主题 + 玻璃态
+   ================================================================ */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  min-height: 100vh; line-height: 1.5;
+}
+body {
+  background: url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=80') center/cover no-repeat fixed;
+  color: #1a1a2e;
+}
+body::before {
+  content: ''; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(15,12,20,0.55); z-index: -1;
+}
+.app-wrap { max-width: 1440px; margin: 0 auto; padding: 16px 24px 48px; }
+
+/* ---- 顶部导航 — 金色玻璃态 ---- */
+.nav-top {
+  background: rgba(255,255,255,0.12);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  padding: 14px 28px; display: flex; align-items: center; justify-content: space-between;
+  border-radius: 16px; margin-bottom: 18px;
+  border: 1px solid rgba(255,255,255,0.2);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+}
+.nav-logo { display: flex; align-items: center; gap: 10px; }
+.nav-logo i { font-size: 26px; filter: drop-shadow(0 2px 4px rgba(184,134,11,0.3)); }
+.nav-logo h1 {
+  color: #fff; font-size: 19px; font-weight: 800;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+.nav-logo span { color: rgba(255,255,255,0.7); font-size: 12px; margin-left: 4px; }
+.nav-user-area { display: flex; align-items: center; gap: 12px; }
+.nav-user {
+  color: rgba(255,255,255,0.9); font-size: 13px; display: flex; align-items: center; gap: 8px;
+}
+.nav-user .uav { width: 36px; height: 36px; background: linear-gradient(135deg,#b8860b,#d4a84b); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-weight: 800; color: #fff;
+  box-shadow: 0 4px 12px rgba(184,134,11,0.35);
+}
+.btn-logout {
+  padding: 8px 18px; border-radius: 10px; cursor: pointer; font-size: 13px;
+  font-weight: 600; transition: all 0.25s; font-family: inherit; display: flex; align-items: center; gap: 6px;
+  background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.25);
+  backdrop-filter: blur(8px);
+}
+.btn-logout:hover { background: rgba(239,68,68,0.85); border-color: rgba(239,68,68,0.6);
+  transform: translateY(-1px); box-shadow: 0 4px 16px rgba(220,38,38,0.3);
+}
+
+/* ---- 面板卡片 — 玻璃态 ---- */
+.pn {
+  background: rgba(255,255,255,0.88);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border-radius: 14px; border: 1px solid rgba(255,255,255,0.35);
+  padding: 20px; margin-bottom: 16px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+}
+.pn-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;
+  font-size: 15px; font-weight: 700; color: #1a1a2e; }
+.pn-head > span { display: flex; align-items: center; gap: 6px; }
+
+/* ---- KPI 卡片 — 金色系 ---- */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 16px; }
+.kc {
+  background: rgba(255,255,255,0.88);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border-radius: 14px; padding: 18px 20px;
+  border: 1px solid rgba(255,255,255,0.35);
+  position: relative; overflow: hidden; transition: transform 0.25s, box-shadow 0.25s;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+}
+.kc:hover { transform: translateY(-3px); box-shadow: 0 10px 32px rgba(0,0,0,0.1); }
+.kc::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3.5px; border-radius: 14px 14px 0 0; }
+.kc-blue::before { background: linear-gradient(90deg, #b8860b, #d4a84b); }
+.kc-green::before { background: linear-gradient(90deg, #0891b2, #22d3ee); }
+.kc-orange::before { background: linear-gradient(90deg, #c2410c, #fb923c); }
+.kc-red::before { background: linear-gradient(90deg, #b91c1c, #f87171); }
+.kc-purple::before { background: linear-gradient(90deg, #7c3aed, #a78bfa); }
+.ki-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; color: #666; font-size: 13px; }
+.kv { font-size: 32px; font-weight: 900; line-height: 1.1; color: #1a1a2e; }
+.kv sub { font-size: 16px; opacity: 0.55; margin-left: 2px; vertical-align: baseline; }
+.kl { font-size: 12px; color: #888; margin-top: 3px; }
+
+/* ---- Tag ---- */
+.tg { display: inline-block; padding: 3px 11px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+.tg-blue { background: linear-gradient(135deg,#fef3c7,#fde68a); color: #92400e; }
+.tg-green { background: linear-gradient(135deg,#d1fae5,#a7f3d0); color: #065f46; }
+.tg-orange { background: linear-gradient(135deg,#ffedd5,#fed7aa); color: #9a3412; }
+.tg-red { background: linear-gradient(135deg,#fee2e2,#fecaca); color: #991b1b; }
+.tg-purple { background: linear-gradient(135deg,#ede9fe,#ddd6fe); color: #5b21b6; }
+.tg-gray { background: #f3f4f6; color: #6b7280; }
+
+/* ---- Progress ---- */
+.prg { display: flex; align-items: center; gap: 8px; }
+.prg-track { flex: 1; height: 9px; background: rgba(0,0,0,0.07); border-radius: 5px; overflow: hidden; }
+.prg-fill { height: 100%; border-radius: 5px; transition: width 0.5s ease; }
+.prg-pct { font-size: 12px; font-weight: 700; min-width: 34px; text-align: right; color: #444; }
+
+/* ---- Table ---- */
+.tbl { width: 100%; border-collapse: collapse; }
+.tbl thead th {
+  background: rgba(184,134,11,0.08); padding: 11px 13px; text-align: left; font-size: 12px;
+  font-weight: 700; color: #785018; border-bottom: 2px solid rgba(184,134,11,0.2);
+}
+.tbl tbody td { padding: 11px 13px; font-size: 13px; border-bottom: 1px solid rgba(0,0,0,0.04); vertical-align: middle; }
+.tbl tbody tr:hover { background: rgba(184,134,11,0.05); }
+.cel { display: flex; align-items: center; gap: 8px; }
+.ca { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center;
+  justify-content: center; color: #fff; font-size: 13px; font-weight: 800; flex-shrink: 0;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.15); }
+.ca1 { background: linear-gradient(135deg,#b8860b,#d4a84b); }
+.ca2 { background: linear-gradient(135deg,#0891b2,#22d3ee); }
+.ca3 { background: linear-gradient(135deg,#c2410c,#fb923c); }
+.ca4 { background: linear-gradient(135deg,#7c3aed,#a78bfa); }
+.ca5 { background: linear-gradient(135deg,#b91c1c,#f87171); }
+.ca6 { background: linear-gradient(135deg,#15803d,#4ade80); }
+.sc { font-weight: 800; font-size: 16px; }
+.sc-h { color: #059669; } .sc-m { color: #d97706; } .sc-l { color: #dc2626; }
+
+/* ---- Filter ---- */
+.flt { display: flex; align-items: center; gap: 10px; padding: 12px 16px;
+  background: rgba(255,255,255,0.75); backdrop-filter: blur(8px);
+  border-radius: 12px; border: 1px solid rgba(255,255,255,0.3); margin-bottom: 14px; flex-wrap: wrap;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04); }
+.fs { padding: 8px 13px; border: 1.5px solid rgba(184,134,11,0.2); border-radius: 8px; font-size: 13px; outline: none;
+  background: rgba(255,255,255,0.8); font-family: inherit; }
+.fs:focus { border-color: #b8860b; box-shadow: 0 0 0 3px rgba(184,134,11,0.1); }
+.fs-sel { appearance: none; padding-right: 28px;
+  background: rgba(255,255,255,0.8) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23b8860b'%3E%3Cpath d='M6 8L1 3h10z'/%3E%3C/svg%3E") no-repeat right 10px center; }
+.flk { display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 13px; color: #555; }
+.flk input[type="checkbox"] { accent-color: #b8860b; width: 15px; height: 15px; }
+
+/* ---- Button — 金色主题 ---- */
+.bt { padding: 7px 16px; border: 1.5px solid rgba(184,134,11,0.25); border-radius: 8px; font-size: 12px;
+  cursor: pointer; background: rgba(255,255,255,0.9); color: #785018; transition: all 0.25s; font-family: inherit;
+  font-weight: 600; }
+.bt:hover { border-color: #b8860b; background: linear-gradient(135deg,#fef3c7,#fde68a); color: #92400e;
+  transform: translateY(-1px); box-shadow: 0 4px 12px rgba(184,134,11,0.15); }
+.bt-sm { padding: 5px 11px; }
+.bt-pri { background: linear-gradient(135deg, #b8860b 0%, #d4a84b 50%, #c99a2a 100%);
+  color: #fff; border-color: transparent; box-shadow: 0 4px 14px rgba(184,134,11,0.3); }
+.bt-pri:hover { background: linear-gradient(135deg, #9a7209 0%, #c99a2a 50%, #b8860b 100%);
+  color: #fff; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(184,134,11,0.4); }
+.bt-out { color: #b8860b; border-color: #b8860b; background: rgba(255,255,255,0.95); font-weight: 600; }
+.bt-out:hover { background: linear-gradient(135deg,#fef3c7,#fde68a); }
+.bt-full { width: 100%; }
+.bt:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
+
+/* ---- 三栏 & 两栏 ---- */
+.g3 { display: grid; grid-template-columns: 300px 1fr 340px; gap: 16px; }
+.g2 { display: grid; grid-template-columns: 1fr 360px; gap: 16px; }
+.g2h { display: grid; grid-template-columns: 340px 1fr 300px; gap: 16px; }
+
+/* ---- 欢迎横幅 — 金色渐变 ---- */
+.wb {
+  background: linear-gradient(135deg, rgba(184,134,11,0.9) 0%, rgba(212,168,75,0.85) 50%, rgba(201,154,42,0.9) 100%);
+  backdrop-filter: blur(16px); border-radius: 16px;
+  padding: 24px 28px; color: #fff; display: flex; align-items: center; gap: 18px;
+  margin-bottom: 16px; border: 1px solid rgba(255,215,0,0.25);
+  box-shadow: 0 8px 32px rgba(184,134,11,0.25);
+}
+.wb-av { width: 56px; height: 56px; background: rgba(255,255,255,0.25); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 800;
+  flex-shrink: 0; backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.3); }
+.wb h3 { font-size: 19px; margin-bottom: 5px; text-shadow: 0 1px 4px rgba(0,0,0,0.15); }
+.wb p { font-size: 12px; opacity: 0.9; }
+.wb-tgs { display: flex; gap: 7px; margin-top: 8px; }
+.wb-tg { background: rgba(255,255,255,0.22); padding: 3px 12px; border-radius: 10px; font-size: 11px;
+  backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.15); }
+
+/* ---- Stage Timeline ---- */
+.stl { display: flex; flex-direction: column; gap: 14px; }
+.sti { display: flex; gap: 10px; align-items: flex-start; }
+.std { width: 13px; height: 13px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; border: 2.5px solid; }
+.sti.done .std { background: currentColor; border-color: #059669; color: #059669; }
+.sti.cur  .std { background: currentColor; border-color: #b8860b; color: #b8860b;
+  box-shadow: 0 0 0 4px rgba(184,134,11,0.15); }
+.sti.next .std { background: #fff; border-color: #ccc; color: #ccc; }
+.stb h4 { font-size: 14px; font-weight: 700; }
+.sti.done .stb h4 { color: #059669; }
+.sti.cur  .stb h4 { color: #92400e; }
+.sti.next .stb h4 { color: #bbb; }
+.stb p { font-size: 12px; color: #888; }
+
+/* ---- Task Card ---- */
+.tc { background: rgba(255,255,255,0.65); backdrop-filter: blur(8px); border-radius: 12px; padding: 15px;
+  border: 1px solid rgba(255,255,255,0.3); transition: all 0.25s; margin-bottom: 11px; }
+.tc:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.07); transform: translateY(-1px); }
+.tc-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; }
+.tc-tt { font-size: 14px; font-weight: 700; color: #1a1a2e; }
+.tc-ds { font-size: 12px; color: #666; line-height: 1.6; margin-bottom: 7px; }
+.tc-sk { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 7px; }
+.tc-ft { display: flex; align-items: center; justify-content: space-between; }
+
+/* ---- AI Card — 金色渐变 ---- */
+.ai-pn {
+  background: linear-gradient(145deg, rgba(254,243,199,0.7), rgba(253,230,138,0.45));
+  border: 1.5px solid rgba(184,134,11,0.2);
+  border-radius: 14px; padding: 20px; position: relative; overflow: hidden;
+  backdrop-filter: blur(8px);
+}
+.ai-pn::after { content: '✦'; position: absolute; top: -10px; right: -10px;
+  font-size: 64px; opacity: 0.1; pointer-events: none; color: #b8860b; }
+.ai-hd { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.ai-ring { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #b8860b, #d4a84b);
+  display: flex; align-items: center; justify-content: center; color: #fff; font-size: 20px;
+  animation: pulseGold 2s infinite; box-shadow: 0 4px 14px rgba(184,134,11,0.35); }
+@keyframes pulseGold { 0%,100% { box-shadow: 0 0 0 0 rgba(184,134,11,0.4); }
+  50% { box-shadow: 0 0 0 10px rgba(184,134,11,0); } }
+.ai-txt { font-size: 14px; line-height: 1.8; color: #444; margin-bottom: 14px; }
+.ai-sec { font-size: 13px; font-weight: 700; color: #92400e; margin: 14px 0 7px;
+  display: flex; align-items: center; gap: 5px; }
+.ai-chp { display: flex; gap: 7px; padding: 7px 0; font-size: 13px; align-items: flex-start; }
+.ai-chp-b { background: linear-gradient(135deg, #b8860b, #d4a84b); color: #fff; padding: 2px 9px; border-radius: 5px;
+  font-size: 11px; white-space: nowrap; flex-shrink: 0; }
+.ai-radar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin-top: 10px; }
+.ar-itm { text-align: center; padding: 10px; background: rgba(255,255,255,0.6); border-radius: 10px;
+  backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.4); }
+.ar-val { font-size: 19px; font-weight: 900; }
+.ar-lbl { font-size: 11px; color: #888; margin-top: 2px; }
+
+/* ---- Modal — 玻璃态 ---- */
+.mod-bg { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(6px); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+.mod-box {
+  background: rgba(255,255,255,0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border-radius: 18px; width: 560px; max-height: 85vh;
+  overflow-y: auto; box-shadow: 0 24px 64px rgba(0,0,0,0.2);
+  border: 1px solid rgba(255,255,255,0.3);
+}
+.mod-hd { padding: 18px 24px; border-bottom: 1px solid rgba(184,134,11,0.15);
+  display: flex; align-items: center; justify-content: space-between; }
+.mod-hd h3 { font-size: 16px; color: #1a1a2e; font-weight: 700; }
+.mod-hd-x { width: 30px; height: 30px; border-radius: 50%; border: none;
+  background: rgba(0,0,0,0.06); cursor: pointer; font-size: 18px; display: flex;
+  align-items: center; justify-content: center; transition: all 0.2s; }
+.mod-hd-x:hover { background: rgba(220,38,38,0.1); color: #dc2626; }
+.mod-bd { padding: 22px 24px; }
+
+/* ---- Chart Bars ---- */
+.cht { display: flex; flex-direction: column; gap: 9px; margin-bottom: 16px; }
+.crow { display: flex; align-items: center; gap: 11px; }
+.crow-l { width: 110px; font-size: 11px; color: #666; text-align: right; flex-shrink: 0; }
+.crow-t { flex: 1; height: 24px; background: rgba(0,0,0,0.05); border-radius: 6px; overflow: hidden; }
+.crow-f { height: 100%; border-radius: 6px; display: flex; align-items: center;
+  padding-right: 8px; justify-content: flex-end; transition: width 0.5s; min-width: 0;
+  font-size: 11px; color: #fff; font-weight: 700; }
+.crow-n { width: 28px; font-size: 14px; font-weight: 800; text-align: right; color: #333; }
+
+/* ---- 饼图 ---- */
+.pie-r { display: flex; align-items: center; gap: 22px; margin-top: 8px; }
+.pie-c { width: 120px; height: 120px; border-radius: 50%; position: relative; flex-shrink: 0;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+.pie-m { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  width: 66px; height: 66px; background: rgba(255,255,255,0.95); border-radius: 50%; display: flex;
+  flex-direction: column; align-items: center; justify-content: center;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+.pie-m b { font-size: 21px; color: #1a1a2e; }
+.pie-m small { font-size: 10px; color: #999; }
+.pie-lg { display: flex; flex-direction: column; gap: 6px; }
+.pl-row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #555; }
+.ld { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+
+/* ---- 风险面板 ---- */
+.alrt { padding: 11px 15px; border-radius: 10px; display: flex; align-items: center; gap: 8px;
+  font-size: 13px; margin-bottom: 14px; backdrop-filter: blur(8px); }
+.alrt-warn { background: rgba(254,243,199,0.9); border: 1px solid rgba(245,158,11,0.4); color: #92400e; }
+.alrt-danger { background: rgba(254,226,226,0.9); border: 1px solid rgba(248,113,113,0.4); color: #991b1b; }
+.rk-cd { border-radius: 12px; padding: 14px; border: 1px solid rgba(0,0,0,0.06); margin-bottom: 11px;
+  transition: all 0.25s; background: rgba(255,255,255,0.7); backdrop-filter: blur(6px); }
+.rk-cd:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.08); transform: translateY(-1px); }
+.rk-b { border-left: 3.5px solid #dc2626; }
+.rk-s { border-left: 3.5px solid #f59e0b; }
+.rk-top { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
+.rk-info { flex: 1; }
+.rk-info strong { font-size: 14px; }
+.rk-info small { font-size: 12px; color: #888; }
+.rk-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px; }
+.rk-row .lb { color: #888; }
+.rk-row .vl { font-weight: 600; }
+.rk-row .vl.stale { color: #f59e0b; }
+.rk-act { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 11px; }
+
+/* ---- 快捷操作 ---- */
+.qg { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.qb { display: flex; flex-direction: column; align-items: center; gap: 5px;
+  padding: 16px 10px; border-radius: 12px; cursor: pointer;
+  border: 1.5px solid rgba(184,134,11,0.15);
+  font-size: 12px; color: #555; transition: all 0.25s;
+  background: rgba(255,255,255,0.7); backdrop-filter: blur(6px); }
+.qb:hover { border-color: #b8860b; color: #92400e; background: rgba(254,243,199,0.6);
+  transform: translateY(-2px); box-shadow: 0 6px 20px rgba(184,134,11,0.12); }
+.qb i { font-size: 23px; }
+
+/* ---- Pagination ---- */
+.pg { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px;
+  font-size: 12px; color: #777; background: rgba(255,255,255,0.5); border-radius: 10px;
+  backdrop-filter: blur(4px); margin-top: 12px; }
+.pg-btns { display: flex; gap: 7px; }
+
+/* ---- 页面标题区 ---- */
+.page-header { margin-bottom: 18px; }
+.page-title { font-size: 22px; font-weight: 800; color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+.page-subtitle { font-size: 13px; color: rgba(255,255,255,0.7); margin-top: 4px; }
+
+/* 响应式 */
+@media (max-width: 1180px) { .g3, .g2, .g2h { grid-template-columns: 1fr; } }
+@media (max-width: 680px) {
+  .kpis { grid-template-columns: repeat(2,1fr); }
+  .flt { flex-direction: column; align-items: stretch; }
+  .nav-top { flex-wrap: wrap; gap: 10px; }
+}
+
+/* 滚动条美化 */
+::-webkit-scrollbar { width: 7px; }
+::-webkit-scrollbar-thumb { background: rgba(184,134,11,0.3); border-radius: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* ================================================================
+   登录页面样式 — 融合山景背景 + 玻璃态卡片 + 左右布局
+   ================================================================ */
+.login-page {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=80') center/cover no-repeat;
+  z-index: 9999;
+}
+.login-page::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.25);
+}
+.login-container {
+  position: relative; z-index: 1;
+  display: flex; align-items: center; justify-content: center;
+  height: 100vh; padding: 40px;
+}
+.login-box {
+  display: flex; width: 900px; max-width: 95vw;
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-radius: 28px;
+  border: 1px solid rgba(255,255,255,0.3);
+  box-shadow: 0 32px 80px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.1) inset;
+  overflow: hidden;
+  animation: loginFloat 0.8s ease-out;
+}
+@keyframes loginFloat {
+  from { opacity: 0; transform: translateY(30px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* 左侧品牌区 */
+.login-brand {
+  flex: 0 0 380px;
+  padding: 50px 40px;
+  color: #fff;
+  display: flex; flex-direction: column; justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+.login-brand::before {
+  content: '';
+  position: absolute; top: -60px; left: -60px;
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, rgba(255,215,0,0.35) 0%, transparent 70%);
+  border-radius: 50%;
+}
+.login-brand::after {
+  content: '';
+  position: absolute; bottom: -80px; right: -40px;
+  width: 180px; height: 180px;
+  background: radial-gradient(circle, rgba(255,165,0,0.25) 0%, transparent 70%);
+  border-radius: 50%;
+}
+.login-logo-icon {
+  width: 64px; height: 64px;
+  background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.7) 100%);
+  border-radius: 18px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 32px; margin-bottom: 22px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  position: relative; z-index: 1;
+}
+.login-brand h2 {
+  font-size: 32px; font-weight: 800; margin-bottom: 12px;
+  letter-spacing: -0.5px; position: relative; z-index: 1;
+}
+.login-brand h2 span { opacity: 0.9; font-weight: 400; }
+.login-brand p {
+  font-size: 14px; line-height: 1.8; opacity: 0.88; margin-bottom: 28px;
+  position: relative; z-index: 1;
+}
+.login-features {
+  list-style: none; position: relative; z-index: 1;
+}
+.login-features li {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 13px; margin-bottom: 12px; opacity: 0.92;
+}
+.login-features li .ficon {
+  width: 26px; height: 26px; background: rgba(255,255,255,0.18);
+  border-radius: 7px; display: flex; align-items: center; justify-content: center;
+  font-size: 13px; backdrop-filter: blur(4px);
+}
+
+/* 右侧登录表单 */
+.login-form-area {
+  flex: 1; padding: 48px 44px;
+  background: rgba(255,255,255,0.88);
+  display: flex; flex-direction: column; justify-content: center;
+}
+.login-welcome { text-align: center; margin-bottom: 10px; }
+.login-welcome small {
+  font-size: 11px; letter-spacing: 4px; text-transform: uppercase;
+  color: #b8860b; font-weight: 600;
+}
+.login-welcome h3 {
+  font-size: 22px; font-weight: 700; color: #1a1a2e; margin-top: 6px;
+}
+
+/* 角色选择 */
+.role-select { margin-bottom: 20px; }
+.role-label {
+  font-size: 13px; color: #666; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 6px;
+}
+.role-options {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+}
+.role-opt {
+  padding: 11px 8px; border: 2px solid #e5e7eb; border-radius: 11px;
+  cursor: pointer; text-align: center; transition: all 0.25s ease;
+  background: #fff; font-family: inherit;
+}
+.role-opt:hover { border-color: #b8860b; background: #fffbf0; }
+.role-opt.active {
+  border-color: #b8860b; background: linear-gradient(135deg, #b8860b 0%, #d4a84b 100%);
+  color: #fff; box-shadow: 0 4px 16px rgba(184,134,11,0.3);
+}
+.role-opt .role-icon { font-size: 22px; display: block; margin-bottom: 3px; }
+.role-opt .role-name { font-size: 12px; font-weight: 600; }
+
+/* 输入框 */
+.login-input-group { margin-bottom: 16px; position: relative; }
+.login-input-group label {
+  display: block; font-size: 12px; color: #666; margin-bottom: 6px; font-weight: 500;
+}
+.login-input {
+  width: 100%; padding: 13px 16px; padding-right: 42px;
+  border: 2px solid #e5e7eb; border-radius: 11px;
+  font-size: 14px; outline: none; transition: all 0.25s; font-family: inherit;
+  background: #fafbfc;
+}
+.login-input:focus { border-color: #b8860b; background: #fff; box-shadow: 0 0 0 4px rgba(184,134,11,0.08); }
+.login-input::placeholder { color: #bbb; }
+.input-icon-inside {
+  position: absolute; right: 14px; bottom: 14px;
+  font-size: 17px; color: #ccc; pointer-events: none;
+}
+
+/* Remember & Forgot */
+.login-options-row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 22px; font-size: 13px;
+}
+.remember-me { display: flex; align-items: center; gap: 6px; cursor: pointer; color: #666; }
+.remember-me input[type="checkbox"] {
+  accent-color: #b8860b; width: 16px; height: 16px;
+}
+.forgot-link { color: #b8860b; text-decoration: none; font-weight: 500; }
+.forgot-link:hover { text-decoration: underline; }
+
+/* 登录按钮 */
+.btn-login {
+  width: 100%; padding: 14px; border: none; border-radius: 12px;
+  background: linear-gradient(135deg, #b8860b 0%, #d4a84b 50%, #c99a2a 100%);
+  color: #fff; font-size: 16px; font-weight: 700; cursor: pointer;
+  transition: all 0.3s; font-family: inherit;
+  letter-spacing: 0.5px; box-shadow: 0 6px 20px rgba(184,134,11,0.35);
+  position: relative; overflow: hidden;
+}
+.btn-login:hover {
+  transform: translateY(-2px); box-shadow: 0 10px 30px rgba(184,134,11,0.45);
+}
+.btn-login:active { transform: translateY(0); }
+.btn-login::before {
+  content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  animation: btnShine 2s infinite;
+}
+@keyframes btnShine { to { left: 100%; } }
+
+/* 底部链接 */
+.login-footer {
+  text-align: center; margin-top: 18px; font-size: 12px; color: #888;
+}
+.login-footer a { color: #b8860b; text-decoration: none; font-weight: 500; }
+.login-footer a:hover { text-decoration: underline; }
+
+/* 错误提示 */
+.login-error {
+  background: #fef2f2; border: 1px solid #fecaca; border-radius: 9px;
+  padding: 10px 14px; font-size: 13px; color: #dc2626;
+  margin-bottom: 14px; display: none;
+}
+.login-error.show { display: flex; align-items: center; gap: 8px; }
+</style>
+</head>
+
+<body>
+
+<!-- ================================================================
+     Vue 挂载点
+     ================================================================ -->
+<div id="app">
+
+  <!-- Vue 未加载时的友好提示 -->
+  <noscript><div style="text-align:center;padding:100px 20px;color:#e34d59;"><h2>⚠️ JavaScript 未启用</h2><p>请启用 JavaScript 后刷新页面</p></div></noscript>
+
+  <div class="app-wrap" v-cloak v-show="isLoggedIn">
+
+  <!-- ========== 顶部导航 — 金色玻璃态 + 退出按钮 ========== -->
+  <nav class="nav-top">
+    <div class="nav-logo"><i>⚡</i><h1>实习能量站</h1><span>· 成长导航智能看板</span></div>
+    <div class="nav-user-area">
+      <div class="nav-user">
+        <div class="uav">{{ currentUserInfo.avatar }}</div>
+        {{ username || '用户' }} · {{ currentUserInfo.dept }}
+      </div>
+      <button class="btn-logout" @click="logout" title="返回登录页面">
+        ← 返回登录
+      </button>
+    </div>
+  </nav>
+
+  <!-- ============================================================ -->
+  <!-- 实习生仪表盘 — 仅实习生可见                                    -->
+  <!-- ============================================================ -->
+  <template v-if="selectedRole === 1">
+
+    <div class="page-header">
+      <h2 class="page-title">👤 实习生仪表盘</h2>
+      <p class="page-subtitle">追踪你的成长轨迹 · AI 智能辅助 · 实时数据驱动</p>
+    </div>
+
+    <div class="wb">
+      <div class="wb-av">张</div>
+      <div>
+        <h3>张小明，欢迎回来！👋</h3>
+        <p>重庆邮电大学 · 计算机科学与技术 · 技术研发部 · 第 8 周</p>
+        <div class="wb-tgs">
+          <span class="wb-tg">前端开发轨道</span>
+          <span class="wb-tg">L2 成长期</span>
+          <span class="wb-tg">能量值 ⚡ 68</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="g3">
+      <!-- 左：阶段 -->
+      <div class="pn">
+        <div class="pn-head"><span>📍 当前成长阶段</span></div>
+        <div style="margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:#888;margin-bottom:6px;">
+            <span>L2 成长期进度</span><strong style="color:#92400e;">68%</strong>
+          </div>
+          <div class="prg-track"><div class="prg-fill" style="width:68%;background:linear-gradient(90deg,#b8860b,#d4a84b)"></div></div>
+        </div>
+        <div class="stl">
+          <div class="sti done">
+            <div class="std"></div>
+            <div class="stb"><h4>L1 入门期 ✓</h4><p>第1~4周 · 熟悉环境、配置工具、学习规范、完成新人任务</p></div>
+          </div>
+          <div class="sti cur">
+            <div class="std"></div>
+            <div class="stb">
+              <h4>L2 成长期 (当前)</h4>
+              <p>第5~8周 · 独立承担模块开发、参与代码评审、学习设计模式</p>
+              <div class="prg-track" style="margin-top:8px;"><div class="prg-fill" style="width:68%;background:#b8860b;"></div></div>
+            </div>
+          </div>
+          <div class="sti next">
+            <div class="std"></div>
+            <div class="stb"><h4>L3 进阶期</h4><p>第9~12周 · 主导小型项目、技术分享、独立完成复杂需求</p></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 中：任务 -->
+      <div class="pn">
+        <div class="pn-head"><span>📋 本周任务列表</span><span class="tg tg-blue">5 项</span></div>
+        <div v-for="t in tasks" :key="t.id" class="tc">
+          <div class="tc-top">
+            <span class="tc-tt">{{ t.title }}</span>
+            <div style="display:flex;gap:4px;align-items:center;">
+              <span class="tg" :class="t.sCls">{{ t.sts }}</span>
+              <small style="color:#bbb;">{{ t.diff }}★</small>
+            </div>
+          </div>
+          <p class="tc-ds">{{ t.desc }}</p>
+          <div class="tc-sk">
+            <span v-for="sk in t.skills" :key="sk" class="tg tg-gray">{{ sk }}</span>
+          </div>
+          <div class="tc-ft">
+            <div v-if="t.pct>0 && t.pct<100" class="prg" style="flex:1;margin-right:12px;">
+              <div class="prg-track"><div class="prg-fill" :style="{width:t.pct+'%',background:pgColor(t.pct)}"></div></div>
+              <span class="prg-pct">{{ t.pct }}%</span>
+            </div>
+            <button class="bt" :class="t.pct>=100?'bt-out':'bt-pri'" @click="msg(t.pct>=100?'查看任务详情':'开始/继续任务 — Demo 演示')">
+              {{ t.pct>=100 ? '查看详情' : (t.pct>0 ? '继续开发' : '开始任务') }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 右：AI -->
+      <div class="ai-pn">
+        <div class="ai-hd">
+          <div class="ai-ring">✨</div>
+          <div><strong style="font-size:15px;">AI 成长建议</strong><br><small style="color:#999;">基于你的实时数据智能分析</small></div>
+        </div>
+        <div class="ai-txt">{{ aiAdvice.txt }}</div>
+        <div v-for="(a,i) in aiAdvice.acts" :key="i" class="ai-chp">
+          <span class="ai-chp-b">{{ a.area }}</span><span>{{ a.act }}</span>
+        </div>
+        <div class="ai-sec">📊 能力雷达 (6维度)</div>
+        <div class="ai-radar">
+          <div v-for="(r,i) in aiAdvice.radar" :key="i" class="ar-itm">
+<div class="ar-val" :style="{color: r.sc>=85?'#0891b2':(r.sc>=60?'#d97706':'#dc2626')}">{{ r.sc }}</div>
+          <button class="bt bt-out" @click="msg('模拟面试功能 — 待接入真实 AI 服务')">🎤 模拟面试</button>
+          <button class="bt bt-out" @click="msg('学习资源推荐 — 待接入真实 AI 服务')">📚 学习推荐</button>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- ============================================================ -->
+  <!-- 导师工作台 — 仅导师可见                                        -->
+  <!-- ============================================================ -->
+  <template v-if="selectedRole === 2">
+
+    <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+      <div>
+        <h2 class="page-title">👨‍🏫 导师工作台</h2>
+        <p class="page-subtitle">管理你的实习生 · AI 辅助带教决策</p>
+      </div>
+      <button class="bt bt-pri" @click="msg('分配新任务 — Demo 演示')">+ 分配新任务</button>
+    </div>
+
+    <div class="kpis">
+      <div class="kc kc-blue"><div class="ki-row">👥</div><div class="kv">3</div><div class="kl">负责实习生</div></div>
+      <div class="kc kc-green"><div class="ki-row">✅</div><div class="kv">67<sub>%</sub></div><div class="kl">平均完成率</div></div>
+      <div class="kc kc-orange"><div class="ki-row">⏳</div><div class="kv">4</div><div class="kl">待评价任务</div></div>
+      <div class="kc kc-red"><div class="ki-row">⚠️</div><div class="kv">1</div><div class="kl">需关注</div></div>
+    </div>
+
+    <div class="g2">
+      <!-- 实习生表格 -->
+      <div class="pn" style="padding:0;overflow:hidden;">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th style="width:200px;">实习生</th>
+              <th>部门 / 轨道</th>
+              <th style="width:110px;">阶段</th>
+              <th style="width:160px;">进度</th>
+              <th style="width:70px;">评分</th>
+              <th style="width:140px;">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="s in ml" :key="s.id">
+              <td><div class="cel"><div :class="'ca ca'+s.id">{{ s.name[0] }}</div>
+                <div><strong>{{ s.name }}</strong><br><small style="color:#999;">{{ s.school }}</small></div></div></td>
+              <td><strong>{{ s.dept }}</strong><br><small style="color:#999;">{{ s.track }}</small></td>
+              <td><span class="tg" :class="'tg-'+s.scolor">L{{ s.lv }} {{ s.sname }}</span></td>
+              <td>
+                <div class="prg">
+                  <div class="prg-track"><div class="prg-fill" :style="{width:s.pct+'%',background:pgColor(s.pct)}"></div></div>
+                  <span class="prg-pct">{{ s.pct }}%</span>
+                </div>
+              </td>
+              <td><span class="sc" :class="s.scls">{{ s.score }}</span></td>
+              <td>
+                <button class="bt bt-sm" @click="viewDetail(s)">📋 详情</button>
+                <button class="bt bt-sm bt-pri" style="margin-left:4px;" @click="openAI(s)">💬 AI 建议</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 右侧面板 -->
+      <div>
+        <div class="pn">
+          <div class="pn-head"><span>💡 AI 带教助手</span></div>
+          <p style="font-size:13px;color:#666;line-height:1.6;">点击左侧实习生的「AI 建议」按钮，获取个性化带教话术和行动建议。</p>
+          <div style="margin-top:12px;padding:12px;background:rgba(254,243,199,0.4);border-radius:8px;border:1px dashed rgba(184,134,11,0.3);">
+            <strong style="font-size:13px;color:#92400e;">📌 今日提示</strong>
+            <ul style="font-size:12px;color:#666;margin:6px 0 0 16px;line-height:1.8;">
+              <li>王小刚连续 9 天未更新周报，建议主动沟通</li>
+              <li>张小明的组件化任务已超时，需评估是否需要协助</li>
+              <li>李小红表现优异，可考虑安排技术分享机会</li>
+            </ul>
+          </div>
+        </div>
+        <div class="pn">
+          <div class="pn-head"><span>⚡ 快捷操作</span></div>
+          <div class="qg">
+            <div class="qb" @click="msg('批量评价 — Demo 演示')"><i>📝</i><span>批量评价</span></div>
+            <div class="qb" @click="msg('导出报告 — Demo 演示')"><i>📊</i><span>导出报告</span></div>
+            <div class="qb" @click="msg('群发提醒 — Demo 演示')"><i>🔔</i><span>群发提醒</span></div>
+            <div class="qb" @click="msg('制定计划 — Demo 演示')"><i>🎯</i><span>制定计划</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- ============================================================ -->
+  <!-- HR 总览 — 仅HR可见                                             -->
+  <!-- ============================================================ -->
+  <template v-if="selectedRole === 3">
+
+    <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+      <div>
+        <h2 class="page-title">📊 HR 总览看板</h2>
+        <p class="page-subtitle">实习人才全景监控 · 数据更新于 {{ now }}</p>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="bt bt-out" @click="msg('数据已刷新！（Demo）')">🔄 刷新</button>
+        <button class="bt bt-pri" @click="msg('导出报告 — Demo 演示')">📥 导出报告</button>
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kc kc-blue"><div class="ki-row">👥<span class="tg tg-green" style="font-size:10px;">+2 新增</span></div><div class="kv">6</div><div class="kl">实习生总数</div><div style="display:flex;gap:10px;margin-top:4px;font-size:11px;"><span style="color:#0891b2;">在岗 6</span><span style="color:#999;">离职 0</span></div></div>
+      <div class="kc kc-green"><div class="ki-row">✅</div><div class="kv">100<sub>%</sub></div><div class="kl">在岗率</div><div class="prg-track" style="margin-top:8px;"><div class="prg-fill" style="width:100%;background:#0891b2;"></div></div></div>
+      <div class="kc kc-orange"><div class="ki-row">📈</div><div class="kv">65<sub>%</sub></div><div class="kl">平均进度</div><div style="font-size:12px;margin-top:4px;color:#0891b2;">↑ 较上周 +3.5%</div></div>
+      <div class="kc kc-red"><div class="ki-row">⚠️<span class="tg tg-red" style="font-size:10px;">需关注</span></div><div class="kv" style="color:#e34d59;">3</div><div class="kl">风险人数</div><div style="display:flex;gap:8px;margin-top:4px;font-size:11px;color:#666;"><span>🔴 3 落后</span><span>🟠 1 停滞</span></div></div>
+      <div class="kc kc-purple"><div class="ki-row">⭐</div><div class="kv">82</div><div class="kl">平均评分</div><div style="margin-top:4px;color:#ffb800;font-size:13px;">★★★★☆</div></div>
+    </div>
+
+    <div class="g2h">
+      <!-- 左：图表 -->
+      <div>
+        <div class="pn">
+          <div class="pn-head"><span>📊 进度分布</span><span class="tg tg-gray">{{ hf.length }} 人</span></div>
+          <div class="cht">
+            <div class="crow" v-for="(b,i) in hbar" :key="i">
+              <div class="crow-l">{{ b.l }}</div>
+              <div class="crow-t"><div class="crow-f" :style="{width:b.w+'%',background:b.c}">{{ b.n>0 ? b.w+'%' : '' }}</div></div>
+              <div class="crow-n">{{ b.n }}</div>
+            </div>
+          </div>
+          <div class="pie-r">
+            <div class="pie-c" :style="hpieGrad"><div class="pie-m"><b>{{ hcp }}%</b><small>完成率</small></div></div>
+            <div class="pie-lg">
+              <div class="pl-row" v-for="(l,i) in hpieLg" :key="i"><div class="ld" :style="{background:l.c}"></div><span>{{ l.l }} ({{ l.n }})</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="pn">
+          <div class="pn-head"><span>📍 阶段分布</span></div>
+          <div v-for="(s,i) in hstg" :key="i" style="margin-bottom:8px;">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+              <span class="tg" :class="'tg-'+s.tm">L{{ s.lv }}</span>
+              <span style="flex:1;font-size:13px;">{{ s.nm }}</span>
+              <strong style="font-size:13px;color:#666;">{{ s.n }}人</strong>
+            </div>
+            <div class="prg-track"><div class="prg-fill" :style="{width:(s.n/hf.length*100)+'%',background:s.c}"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 中：表格 -->
+      <div>
+        <div class="flt">
+          <input class="fs" v-model="hs" placeholder="搜索姓名 / 学校..." style="width:170px;" />
+          <select class="fs fs-sel" v-model="htk" style="width:150px;"><option value="">全部岗位</option><option>前端开发</option><option>后端开发</option><option>安全工程师</option><option>产品经理</option><option>法务专员</option></select>
+          <select class="fs fs-sel" v-model="hsg" style="width:140px;"><option value="">全部阶段</option><option value="1">L1 入门期</option><option value="2">L2 成长期</option><option value="3">L3 进阶期</option></select>
+          <label class="flk"><input type="checkbox" v-model="hro" /> 仅风险</label>
+        </div>
+
+        <div class="pn" style="padding:0;overflow:hidden;">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th style="width:160px;">姓名</th><th>部门</th><th>岗位轨道</th>
+                <th style="width:90px;">阶段</th><th style="width:150px;">进度</th>
+                <th style="width:60px;">评分</th><th style="width:120px;">状态</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="r in hp" :key="r.id">
+                <td><div class="cel"><div :class="'ca ca'+r.id">{{ r.name[0] }}</div><div><strong>{{ r.name }}</strong><br><small style="color:#999;">{{ r.school }}</small></div></div></td>
+                <td><strong>{{ r.dept }}</strong></td>
+                <td style="font-size:12px;">{{ r.track }}</td>
+                <td><span class="tg" :class="'tg-'+r.scolor">L{{ r.lv }} {{ r.sn }}</span></td>
+                <td><div class="prg"><div class="prg-track"><div class="prg-fill" :style="{width:r.pct+'%',background:pgColor(r.pct)}"></div></div><span class="prg-pct">{{ r.pct }}%</span></div></td>
+                <td><span class="sc" :class="r.scls">{{ r.score??'-' }}</span></td>
+                <td>
+                  <span v-if="r.bh" class="tg tg-red">⚠ 落后</span>
+                  <span v-else-if="r.st" class="tg tg-orange">⏳ 停滞</span>
+                  <span v-else-if="r.score>=85" class="tg tg-green">✓ 优秀</span>
+                  <span v-else style="color:#ccc;font-size:11px;">-</span>
+                </td>
+              </tr>
+              <tr v-if="hp.length===0"><td colspan="7" style="text-align:center;padding:28px;color:#999;">无匹配数据</td></tr>
+            </tbody>
+          </table>
+          <div class="pg">
+            <span>共 {{ hf.length }} 条</span>
+            <span>第 {{ hpag }} / {{ htp }} 页</span>
+            <div class="pg-btns">
+              <button class="bt bt-sm" :disabled="hpag<=1" @click="hpag--">上一页</button>
+              <button class="bt bt-sm" :disabled="hpag>=htp" @click="hpag++">下一页</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 右：风险名单 -->
+      <div>
+        <div class="alrt alrt-danger" v-if="hrk.length>0"><strong>!</strong> 发现 {{ hrk.length }} 名需要关注的实习生，请及时与对应导师沟通。</div>
+        <div class="pn">
+          <div class="pn-head" style="color:#e34d59;"><span>⚠️ 风险名单</span><span class="tg tg-red">{{ hrk.length }}</span></div>
+          <template v-if="hrk.length>0">
+            <div v-for="rk in hrk" :key="rk.id" class="rk-cd" :class="rk.bh?'rk-b':'rk-s'">
+              <div class="rk-top">
+                <div :class="'ca ca'+rk.id">{{ rk.name[0] }}</div>
+                <div class="rk-info"><strong>{{ rk.name }}</strong><br><small>{{ rk.track }} · L{{ rk.lv }} {{ rk.sn }}</small></div>
+                <span class="tg" :class="rk.bh?'tg-red':'tg-orange'">{{ rk.bh?'落后':'停滞' }}</span>
+              </div>
+              <div class="rk-row"><span class="lb">当前进度</span><div class="prg" style="flex:1;margin-left:10px;justify-content:flex-end;"><div class="prg-track"><div class="prg-fill" :style="{width:rk.pct+'%',background:'#e34d59'}"></div></div><span class="prg-pct" style="color:#e34d59;">{{ rk.pct }}%</span></div></div>
+              <div class="rk-row"><span class="lb">最后活跃</span><span class="vl" :class="{stale:rk.st}">{{ rk.last }}</span></div>
+              <div class="rk-row"><span class="lb">导师</span><span class="vl">{{ rk.mentor }}</span></div>
+              <div class="rk-act">
+                <button class="bt bt-sm" @click="msg('查看 '+rk.name+' 的详细档案 — Demo 演示')">查看详情</button>
+                <button class="bt bt-sm" style="border-color:#e34d59;color:#e34d59;" @click="msg('已通知导师 — Demo 演示')">通知导师</button>
+              </div>
+            </div>
+          </template>
+          <div v-else style="text-align:center;padding:24px;color:#aaa;">暂无风险人员 🎉</div>
+        </div>
+        <div class="pn">
+          <div class="pn-head"><span>⚡ 快速操作</span></div>
+          <div class="qg">
+            <div class="qb" @click="msg('管理实习生档案 — Demo 演示')"><i>👥</i><span>管理档案</span></div>
+            <div class="qb" @click="msg('批量提醒导师 — Demo 演示')"><i>🔔</i><span>批量提醒</span></div>
+            <div class="qb" @click="msg('生成分析报告 — Demo 演示')"><i>📄</i><span>生成报告</span></div>
+            <div class="qb" @click="msg('AI 全局分析 — Demo 演示')"><i>🧠</i><span>AI 分析</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  </div><!-- /app-wrap -->
+
+  <!-- ========== 登录页面 ========== -->
+  <div class="login-page" v-if="!isLoggedIn">
+    <div class="login-container">
+      <div class="login-box">
+        <!-- 左侧品牌区 -->
+        <div class="login-brand">
+          <div class="login-logo-icon">⚡</div>
+          <h2>实习能量站<span> · 成长导航智能看板</span></h2>
+          <p>为实习生、导师、HR量身打造的智能管理平台，助力每一位实习生的成长之路。</p>
+          <ul class="login-features">
+            <li><span class="ficon">📊</span> 实时数据看板与成长追踪</li>
+            <li><span class="ficon">🤖</span> AI 智能分析与个性化建议</li>
+            <li><span class="ficon">🎯</span> 多角色协同与任务管理</li>
+            <li><span class="ficon">📈</span> 全景式人才监控与风险评估</li>
+          </ul>
+        </div>
+
+        <!-- 右侧登录表单 -->
+        <div class="login-form-area">
+          <div class="login-welcome">
+            <small>Welcome Back</small>
+            <h3>登录您的账户</h3>
+          </div>
+
+          <div class="login-error" :class="{show: loginError}">
+            <span>!</span>{{ loginErrorMsg }}
+          </div>
+
+          <!-- 角色选择 -->
+          <div class="role-select">
+            <div class="role-label">👤 选择您的身份</div>
+            <div class="role-options">
+              <button
+                v-for="(r, i) in roles"
+                :key="r.id"
+                class="role-opt"
+                :class="{active: selectedRole === r.id}"
+                @click="selectedRole = r.id; loginError = false"
+              >
+                <span class="role-icon">{{ r.icon }}</span>
+                <span class="role-name">{{ r.name }}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 用户名 -->
+          <div class="login-input-group">
+            <label>用户名 / 账号</label>
+            <input type="text" class="login-input" v-model="username" placeholder="请输入用户名" @keyup.enter="handleLogin" />
+            <span class="input-icon-inside">👤</span>
+          </div>
+
+          <!-- 密码 -->
+          <div class="login-input-group">
+            <label>密码</label>
+            <input type="password" class="login-input" v-model="password" placeholder="请输入密码" @keyup.enter="handleLogin" />
+            <span class="input-icon-inside">🔒</span>
+          </div>
+
+          <!-- Remember & Forgot -->
+          <div class="login-options-row">
+            <label class="remember-me"><input type="checkbox" v-model="rememberMe" /> 记住我</label>
+            <a href="#" class="forgot-link" @click.prevent="msg('忘记密码功能 — Demo')">忘记密码？</a>
+          </div>
+
+          <!-- 登录按钮 -->
+          <button class="btn-login" @click="handleLogin" :disabled="isLogging">
+            {{ isLogging ? '正在登录...' : '登 录' }}
+          </button>
+
+          <!-- 底部 -->
+          <div class="login-footer">
+            还没有账号？<a href="#" @click.prevent="msg('注册功能 — Demo 演示')">联系管理员开通账号</a>
+          </div>
+
+          <div style="text-align:center;margin-top:14px;font-size:11px;color:#bbb;">
+            Demo 演示：选择角色后，任意输入用户名密码即可登录
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== AI 建议弹窗 ========== -->
+  <div v-if="mod" class="mod-bg" @click.self="mod=false">
+    <div class="mod-box">
+      <div class="mod-hd">
+        <h3>💬 AI 带教建议 — {{ modT?.name }}</h3>
+        <button class="mod-hd-x" @click="mod=false">×</button>
+      </div>
+      <div class="mod-bd">
+        <div style="background:linear-gradient(135deg,rgba(254,243,199,0.6),rgba(253,230,138,0.4));border-left:3px solid #b8860b;padding:12px 14px;border-radius:0 8px 8px 0;font-size:14px;line-height:1.7;margin-bottom:14px;">
+          <strong>反馈话术：</strong>{{ modA.bubble }}
+        </div>
+
+        <div class="ai-sec">📌 带教行动项</div>
+        <div v-for="(a,i) in modA.acts" :key="i" class="ai-chp">
+          <span class="ai-chp-b">{{ a.area }}</span><span>{{ a.act }}</span>
+        </div>
+
+        <div v-if="modA.cons.length" class="ai-sec" style="color:#e34d59;">⚠️ 关注点</div>
+        <div v-if="modA.cons.length" style="display:flex;gap:5px;flex-wrap:wrap;">
+          <span v-for="(c,i) in modA.cons" :key="i" class="tg tg-red">{{ c }}</span>
+        </div>
+
+        <div class="ai-sec">📊 能力评估</div>
+        <div class="ai-radar">
+          <div v-for="(r,i) in modA.radar" :key="i" class="ar-itm">
+            <div class="ar-val" :style="{color: r.sc>=85?'#0891b2':(r.sc>=60?'#d97706':'#dc2626')}">{{ r.sc }}</div>
+            <div class="ar-lbl">{{ r.l }}</div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-top:16px;">
+          <button class="bt bt-out bt-full" @click="msg('话术已复制到剪贴板！（Demo）')">📋 复制话术</button>
+          <button class="bt bt-pri bt-full" @click="mod=false">知道了</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /#app -->
+
+<script>
+/* ================================================================
+   Vue 3 应用初始化 — 所有数据写死，所有交互即时响应
+   ================================================================ */
+
+// 检查 Vue 是否加载成功
+if (typeof Vue === 'undefined') {
+  document.getElementById('app').innerHTML =
+    '<div style="text-align:center;padding:80px 20px;font-family:sans-serif;">' +
+    '<h2 style="color:#e34d59;">⚠️ Vue.js 加载失败</h2>' +
+    '<p style="color:#666;margin:10px 0;">CDN 资源可能被网络拦截，请检查网络连接或尝试刷新页面。</p>' +
+    '<p style="color:#999;font-size:12px;">如果问题持续，请联系管理员。</p>' +
+    '</div>'
+}
+
+
+const { createApp, ref, computed, onMounted } = Vue
+
+createApp({
+  setup() {
+    // ========== 登录相关 ==========
+    const isLoggedIn = ref(false)
+    const username = ref('')
+    const password = ref('')
+    const selectedRole = ref(1) // 1=实习生, 2=导师, 3=HR
+    const rememberMe = ref(false)
+    const isLogging = ref(false)
+    const loginError = ref(false)
+    const loginErrorMsg = ref('')
+
+    const roles = [
+      { id: 1, name: '实习生', icon: '👤', tab: 0, avatar: '实', dept: '技术研发部' },
+      { id: 2, name: '导师', icon: '👨‍🏫', tab: 1, avatar: '导', dept: '导师组' },
+      { id: 3, name: 'HR', icon: '📊', tab: 2, avatar: 'HR', dept: '人力资源部' }
+    ]
+
+    function handleLogin() {
+      // 验证角色
+      if (!selectedRole.value) {
+        showError('请先选择您的身份')
+        return
+      }
+      if (!username.value.trim()) {
+        showError('请输入用户名')
+        return
+      }
+      if (!password.value) {
+        showError('请输入密码')
+        return
+      }
+
+      isLogging.value = true; loginError.value = false
+
+      setTimeout(() => {
+        isLoggedIn.value = true
+        isLogging.value = false
+
+        msg(`欢迎回来，${username.value}！您已以「${currentUserInfo.value.name}」身份登录 — Demo 演示`)
+      }, 800)
+    }
+
+    function showError(msg) {
+      loginErrorMsg.value = msg
+      loginError.value = true
+    }
+
+    function logout() {
+      if (confirm('确定要退出登录吗？')) {
+        isLoggedIn.value = false
+        username.value = ''
+        password.value = ''
+        selectedRole.value = 1
+        loginError.value = false
+      }
+    }
+
+    // 当前登录用户信息（根据角色自动计算）
+    const currentUserInfo = computed(() => {
+      return roles.find(r => r.id === selectedRole.value) || roles[0]
+    })
+
+    // ====== 工具 ======
+    function pgColor(p) { if(p<50)return '#dc2626'; if(p<70)return '#f59e0b'; if(p<90)return '#0891b2'; return '#92400e' }
+    function scCls(s) { if(!s)return ''; if(s>=85)return 'sc-h'; if(s>=70)return 'sc-m'; return 'sc-l' }
+    function msg(t) { alert('📢 ' + t) }
+
+    // ====== 实习生仪表盘 ======
+    const tasks = ref([
+      { id:1, title:'完成用户中心组件重构', desc:'将用户信息模块拆分为独立组件，使用 Composition API 重构，提升复用性。要求覆盖单元测试。', sts:'进行中', sCls:'tg-blue', pct:65, diff:'●●●○', skills:['Vue3','TypeScript','单元测试'] },
+      { id:2, title:'优化首页加载性能', desc:'针对首屏白屏问题进行性能优化，目标 LCP < 2.5s。包括懒加载、代码分割、资源压缩等手段。', sts:'进行中', sCls:'tg-blue', pct:40, diff:'●●●●', skills:['性能优化','Webpack','Lighthouse'] },
+      { id:3, title:'编写 API 对接文档', desc:'为前后端联调编写详细的接口文档，包含请求参数说明、返回数据结构、错误码定义等。', sts:'待开始', sCls:'tg-gray', pct:0, diff:'●●○○', skills:['文档写作','RESTful','Swagger'] },
+      { id:4, title:'参与 Code Review', desc:'审查团队成员提交的前端 PR，关注代码规范、逻辑正确性、潜在 bug 等，并给出建设性反馈意见。', sts:'已完成', sCls:'tg-green', pct:100, diff:'●●○○', skills:['Code Review','Git','协作'] },
+      { id:5, title:'学习 Pinia 状态管理', desc:'自学 Pinia 的核心概念和使用方式，完成官方教程中的示例练习，并在小组内做一次技术分享。', sts:'待开始', sCls:'tg-gray', pct:0, diff:'●○○○', skills:['Pinia','自学','技术分享'] }
+    ])
+
+    const aiAdvice = ref({
+      txt: '你目前处于「L2 成长期」的中段（进度 68%），整体表现稳定。前端基础能力扎实，但在「系统设计」和「跨端能力」两个维度还有较大提升空间。建议本周重点推进组件重构任务的收尾工作，同时开始预习下一阶段的微前端知识。',
+      acts: [
+        { area:'技术深度', act:'深入学习 TypeScript 泛型与高级类型，提升代码质量感知力' },
+        { area:'工程实践', act:'尝试独立搭建一个小型 CLI 工具，锻炼工程化思维' },
+        { area:'软技能', act:'在下次站会上主动分享一个技术方案，锻炼表达能力' }
+      ],
+      radar: [
+        { sc:85, l:'前端开发' }, { sc:72, l:'后端基础' }, { sc:78, l:'协作沟通' },
+        { sc:60, l:'系统设计' }, { sc:88, l:'学习能力' }, { sc:55, l:'跨端能力' }
+      ]
+    })
+
+    // ====== 导师工作台 ======
+    const ml = ref([
+      { id:1, name:'张小明', school:'重庆邮电大学', dept:'技术研发部', track:'前端开发工程师', lv:2, sname:'成长期', scolor:'green', pct:68, score:82, scls:scCls(82) },
+      { id:2, name:'李小红', school:'电子科技大学', dept:'技术研发部', track:'后端开发工程师', lv:2, sname:'成长期', scolor:'green', pct:75, score:88, scls:scCls(88) },
+      { id:3, name:'王小刚', school:'四川大学', dept:'信息安全部', track:'安全工程师', lv:1, sname:'入门期', scolor:'blue', pct:35, score:65, scls:scCls(65) }
+    ])
+
+    const mod = ref(false)
+    const modT = ref(null)
+    const modA = ref({ bubble:'', acts:[], cons:[], radar:[] })
+
+    function viewDetail(s) { msg('查看 ' + s.name + ' 的详细档案 — Demo 演示') }
+
+    function openAI(s) {
+      modT.value = s; mod.value = true
+      const adv = {
+        1:{ bubble:'该同学在前端开发方面展现出较强的学习能力，组件化意识正在形成。近期可以引导其关注架构层面的思考，而不仅仅是功能实现。', acts:[{area:'技术指导',act:'建议在 Code Review 中多提问「为什么这样设计」，引导其思考权衡'},{area:'任务安排',act:'可分配一个中等难度的独立模块让其全权负责'},{area:'软技能培养',act:'鼓励其在团队内进行一次技术方案讲解'}], cons:['组件化思维仍需加强','TypeScript 使用偏基础'], radar:[{sc:85,l:'前端开发'},{sc:62,l:'系统设计'},{sc:78,l:'协作沟通'},{sc:70,l:'编码规范'},{sc:90,l:'学习能力'},{sc:58,l:'测试意识'}] },
+        2:{ bubble:'该同学在后端领域表现出色，代码质量较高，是组内的标杆成员。可以考虑赋予更多技术决策权，培养其 Lead 潜质。', acts:[{area:'技术挑战',act:'可安排参与中间件或公共库的设计与实现'},{area:'领导力培养',act:'让其在下个迭代中担任 Tech Lead 角色'},{area:'职业规划',act:'与其讨论未来 6-12 个月的技术成长路径'}], cons:[], radar:[{sc:90,l:'后端开发'},{sc:82,l:'数据库'},{sc:85,l:'协作沟通'},{sc:88,l:'编码规范'},{sc:80,l:'学习能力'},{sc:70,l:'系统设计'}] },
+        3:{ bubble:'该同学当前处于入门阶段，进度明显滞后于预期。需要重点关注其学习状态和工作习惯，建议增加 1-on-1 沟通频次，了解是否存在阻碍因素。', acts:[{area:'紧急干预',act:'本周安排至少 2 次 1-on-1，了解具体困难'},{area:'任务调整',act:'将当前大任务拆解为更小的里程碑，降低心理压力'},{area:'同伴支持',act:'考虑安排与李小红结对编程，通过观察学习'}], cons:['⚠️ 连续 9 天未提交周报','⚠️ 进度仅 35%，严重滞后','⚠️ 缺乏主动性'], radar:[{sc:45,l:'安全基础'},{sc:40,l:'开发能力'},{sc:55,l:'协作沟通'},{sc:50,l:'学习效率'},{sc:65,l:'态度'},{sc:48,l:'规范意识'}] }
+      }
+      modA.value = adv[s.id] || adv[1]
+    }
+
+    // ====== HR 总览 ======
+    const now = ref('')
+    function tick() { const d=new Date(); now.value=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0') }
+    onMounted(() => { tick(); setInterval(tick,30000) })
+
+    const hs = ref(''); const htk = ref(''); const hsg = ref(''); const hro = ref(false); const hpag = ref(1)
+
+    const ha = ref([
+      { id:1, name:'张小明', school:'重庆邮电大学', dept:'技术研发部', track:'前端开发', lv:2, sn:'成长期', scolor:'green', pct:68, score:82, scls:scCls(82), bh:true, st:false, last:'2天前', mentor:'李导师' },
+      { id:2, name:'李小红', school:'电子科技大学', dept:'技术研发部', track:'后端开发', lv:2, sn:'成长期', scolor:'green', pct:75, score:88, scls:scCls(88), bh:false, st:false, last:'1天前', mentor:'王导师' },
+      { id:3, name:'王小刚', school:'四川大学', dept:'信息安全部', track:'安全工程师', lv:1, sn:'入门期', scolor:'blue', pct:35, score:65, scls:scCls(65), bh:true, st:true, last:'9天前', mentor:'赵导师' },
+      { id:4, name:'陈小美', school:'西南大学', dept:'产品设计部', track:'产品经理', lv:2, sn:'成长期', scolor:'green', pct:80, score:90, scls:scCls(90), bh:false, st:false, last:'今天', mentor:'孙导师' },
+      { id:5, name:'刘小强', school:'重庆大学', dept:'技术研发部', track:'前端开发', lv:1, sn:'入门期', scolor:'blue', pct:42, score:72, scls:scCls(72), bh:true, st:false, last:'3天前', mentor:'李导师' },
+      { id:6, name:'赵小雨', school:'西南政法大学', dept:'法务合规部', track:'法务专员', lv:3, sn:'进阶期', scolor:'orange', pct:92, score:95, scls:scCls(95), bh:false, st:false, last:'今天', mentor:'钱导师' }
+    ])
+
+    const hf = computed(() => {
+      let l = [...ha.value]
+      if(hs.value){ const q=hs.value.toLowerCase(); l=l.filter(i=>i.name.toLowerCase().includes(q)||i.school.toLowerCase().includes(q)) }
+      if(htk.value) l=l.filter(i=>i.track.includes(htk.value))
+      if(hsg.value) l=l.filter(i=>String(i.lv)===hsg.value)
+      if(hro.value) l=l.filter(i=>i.bh||i.st)
+      return l
+    })
+    const htp = computed(() => Math.max(1,Math.ceil(hf.value.length/5)))
+    const hp = computed(() => { const s=(hpag.value-1)*5; return hf.value.slice(s,s+5) })
+    const hrk = computed(() => ha.value.filter(i=>i.bh||i.st))
+
+    // 柱状图
+    const hbar = computed(() => {
+      const l=hf.value; const rs=[{l:'0-30% 需关注',mn:0,mx:30,c:'#dc2626'},{l:'31-50%',mn:31,mx:50,c:'#f59e0b'},{l:'51-70%',mn:51,mx:70,c:'#eab308'},{l:'71-90%',mn:71,mx:90,c:'#0891b2'},{l:'91-100% 优秀',mn:91,mx:100,c:'#92400e'}]
+      return rs.map(r=>{ const n=l.filter(i=>i.pct>=r.mn&&i.pct<=r.mx).length; return {...r,n,w:l.length?Math.round(n/l.length*100):0} })
+    })
+
+    // 饼图
+    const hpieLg = computed(() => {
+      const l=hf.value; const e=l.filter(i=>i.pct>=90).length; const o=l.filter(i=>i.pct>=50&&i.pct<90).length; const g=l.filter(i=>i.pct<50).length
+      return [{l:'优秀(≥90%)',n:e,c:'#92400e'},{l:'正常(50~89%)',n:o,c:'#0891b2'},{l:'滞后(<50%)',n:g,c:'#f59e0b'}]
+    })
+    const hpieGrad = computed(() => {
+      const t=hf.value.length||1; let s=0
+      return { background: `conic-gradient(${hpieLg.value.map(i=>{ const d=i.n/t*360; const seg=`${i.c} ${s}deg ${s+d}deg`; s+=d; return seg }).join(', ')})` }
+    })
+    const hcp = computed(() => { const l=hf.value; return l.length?Math.round(l.filter(i=>i.pct>=70).length/l.length*100):0 })
+
+    // 阶段
+    const hstg = computed(() => {
+      const l=hf.value; const st=[{lv:1,nm:'入门期',tm:'blue',c:'#b8860b'},{lv:2,nm:'成长期',tm:'green',c:'#0891b2'},{lv:3,nm:'进阶期',tm:'orange',c:'#c2410c'}]
+      return st.map(s=>({...s,n:l.filter(i=>i.lv===s.lv).length}))
+    })
+
+    return {
+      // 登录相关
+      isLoggedIn, username, password, selectedRole, rememberMe,
+      isLogging, loginError, loginErrorMsg, roles, handleLogin, logout,
+      currentUserInfo,
+      // 主应用
+      tasks, aiAdvice, pgColor, msg,
+      ml, mod, modT, modA, viewDetail, openAI,
+      now, hs, htk, hsg, hro, hpag, ha, hf, htp, hp, hrk,
+      hbar, hpieLg, hpieGrad, hcp, hstg, scCls
+    }
+  }
+}).mount('#app')
+</script>
+
+</body>
+</html>
